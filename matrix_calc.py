@@ -91,6 +91,10 @@ def wgt_mat_calc(dra_err, ddec_err, ra_dec_cov=None, ra_dec_cor=None):
     return wgt_mat
 
 #### TO-DO ####
+
+
+def jac_mat_calc
+
 # Calculate the Jacobian matrix
 # Calculate the right-hand-side array
 #### TO-DO ####

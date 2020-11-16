@@ -27,16 +27,14 @@ def B_func(l, m, x):
     Parameters
     ----------
     l, m: int
-        degrees of the harmonics
+        degree and order  of the harmonics
     x: float
         variable
     """
 
     if type(l) is not int:
-
         print("The type of 'l' should be int!")
         sys.exit()
-
     elif type(m) is not int:
         print("The type of 'm' should be int!")
         sys.exit()
@@ -65,7 +63,7 @@ def A_func(l, m, x):
     Parameters
     ----------
     l, m: int
-        degrees of the harmonics
+        degree and order  of the harmonics
     x: float
         variable
     """
@@ -73,7 +71,6 @@ def A_func(l, m, x):
     if type(l) is not int:
         print("The type of 'l' should be int!")
         sys.exit()
-
     elif type(m) is not int:
         print("The type of 'm' should be int!")
         sys.exit()
@@ -92,7 +89,7 @@ def vec_sph_harm(l, m, ra, dec):
     Parameters
     ----------
     l, m: int
-        degrees of the harmonics
+        degree and order  of the harmonics
     ra, dec: float
         equatorial coordinates in the unit of radian
 
@@ -133,7 +130,7 @@ def real_vec_sph_harm(l, m, ra, dec):
     Parameters
     ----------
     l, m: int
-        degrees of the harmonics
+        degree and order of the harmonics
     ra, dec: float
         equatorial coordinates in the unit of radian
 
@@ -148,12 +145,12 @@ def real_vec_sph_harm(l, m, ra, dec):
     T_ra, T_dc, S_ra, S_dc = vec_sph_harm(l, m, ra, dec)
 
     if m:
-        T_ra_R, T_ra_i = np.real(T_ra), -np.imag(T_ra)
-        T_dc_R, T_dc_i = np.real(T_dc), -np.imag(T_dc)
-        S_ra_R, S_ra_i = np.real(S_ra), -np.imag(S_ra)
-        S_dc_R, S_dc_i = np.real(S_dc), -np.imag(S_dc)
+        T_ra_r, T_ra_i = np.real(T_ra), -np.imag(T_ra)
+        T_dc_r, T_dc_i = np.real(T_dc), -np.imag(T_dc)
+        S_ra_r, S_ra_i = np.real(S_ra), -np.imag(S_ra)
+        S_dc_r, S_dc_i = np.real(S_dc), -np.imag(S_dc)
 
-        return T_ra_R, T_dc_R, T_ra_i, T_dc_i, S_ra_R, S_dc_R, S_ra_i, S_dc_i
+        return T_ra_r, T_dc_r, T_ra_i, T_dc_i, S_ra_r, S_dc_r, S_ra_i, S_dc_i
     else:
         return T_ra, T_dc, S_ra, S_dc
 # --------------------------------- END --------------------------------
