@@ -29,11 +29,11 @@ def cov_mat_calc(dra_err, ddc_err, ra_dc_cov=None, ra_dc_cor=None):
 
     Parameters
     ----------
-    dra_err/ddc_err : array of float
+    dra_err/ddc_err : float
         formal uncertainty of dRA(*cos(dc_rad))/dDE
-    ra_dc_cov : array of float
+    ra_dc_cov : float
         correlation between dRA and dDE, default is None
-    ra_dc_cor : array of float
+    ra_dc_cor : float
         correlation coefficient between dRA and dDE, default is None
 
     Returns
@@ -42,31 +42,17 @@ def cov_mat_calc(dra_err, ddc_err, ra_dc_cov=None, ra_dc_cor=None):
         Covariance matrix used in the least squares fitting.
     """
 
-    if len(ddc_err) != len(dra_err):
-        print("The length of dra_err and ddc_err should be equal")
-        sys.exit()
-
-    # TO-DO
-    # Check the length of correlation array
-    # else:
-    #     if ra_dc_cov is None:
-
     # Covariance matrix.
-    # err = np.vstack((dra_err, ddc_err)).T.flatten()
-    err = concatenate((dra_err, ddc_err))
-    cov_mat = np.diag(err**2)
+    cov_mat = np.array([[dra_err**2, 0], [0, ddc_err**2]])
 
     # Take the correlation into consideration.
     # Assume at most one of ra_dc_cov and ra_dc_cor is given
-    if ra_dc_cov is None and ra_dc_cor is None:
-        return cov_mat
-    elif ra_dc_cor is not None:
+    if ra_dc_cov is None and ra_dc_cor is not None:
         ra_dc_cov = ra_dc_cor * dra_err * ddc_err
 
-    N = len(dra_err)
-    for i, covi in enumerate(ra_dc_cov):
-        cov_mat[i, i+N] = covi
-        cov_mat[i+N, i] = covi
+    if ra_dc_cov is not None:
+        cov_mat[0, 1] = ra_dc_cov
+        cov_mat[1, 0] = ra_dc_cov
 
     return cov_mat
 
@@ -127,69 +113,6 @@ def wgt_mat_calc(dra_err, ddc_err, ra_dc_cov=None, ra_dc_cor=None):
     return wgt_mat
 
 
-def jac_mat_l_calc(ra_rad, dc_rad, l, fit_type="full"):
-    """Calculate the Jacobian matrix of lth degree
-
-    Parameters
-    ----------
-    ra_rad/dc_rad : array (M,) of float
-        Right ascension/Declination in radian
-    l : int
-        degree of the harmonics
-    fit_type : string
-        flag to determine which parameters to be fitted
-        "full" for T- and S-vectors bot Number of observations
-    """
-
-    M = len(ra_rad)
-
-    # TO_DO
-    # Add asertion about fit_type
-
-    # Usually begins with the first order
-    Tl0_ra, Tl0_dc = real_vec_sph_harm_proj(l, 0, ra_rad, dc_rad)
-
-    # Note the relation between Tlm and Slm
-    #    S10_ra, S10_dc = -Tl0_dc, Tl0_ra
-    #    jac_mat_ra = concatenate(
-    #        (Tl0_ra.reshape(M, 1), Sl0_ra.reshape(M, 1)), axis=1)
-    #    jac_mat_dc = concatenate(
-    #        (Tl0_dc.reshape(M, 1), Sl0_dc.reshape(M, 1)), axis=1)
-    jac_mat_ra = concatenate(
-        (Tl0_ra.reshape(M, 1), -Tl0_dc.reshape(M, 1)), axis=1)
-    jac_mat_dc = concatenate(
-        (Tl0_dc.reshape(M, 1), Tl0_ra.reshape(M, 1)), axis=1)
-
-    for m in range(1, l+1):
-        Tlmr_ra, Tlmr_dc, Tlmi_ra, Tlmi_dc = real_vec_sph_harm_proj(
-            l, m, ra_rad, dc_rad)
-
-        # Just to show the relation
-#        Slmr_ra, Slmi_ra = -Tlmr_dc, -Tlmr_dc
-#        Slmr_dc, Slmr_dc = Tlmr_ra, Tlmr_ra
-
-        # Concatenate the new array and the existing Jacobian matrix
-        jac_mat_ra = concatenate(
-            (jac_mat_ra, Tlmr_ra.reshape(M, 1), -Tlmr_dc.reshape(M, 1),
-                Tlmi_ra.reshape(M, 1), -Tlmi_dc.reshape(M, 1)), axis=1)
-        jac_mat_dc = concatenate(
-            (jac_mat_dc, Tlmr_dc.reshape(M, 1), Tlmr_ra.reshape(M, 1),
-                Tlmi_dc.reshape(M, 1), Tlmi_ra.reshape(M, 1)), axis=1)
-
-    # Treat (ra, dc) as two observations(dependent or independent)
-    # Combine the Jacobian matrix projection on RA and Decl.
-    jac_mat = concatenate((jac_mat_ra, jac_mat_dc), axis=0)
-
-    # Check the shape of the matrix
-    if jac_mat.shape != (2*M, 4*l+2):
-        print("Shape of Jocabian matrix at l={} is ({},{}) "
-              "rather than ({},{})".format(l, jac_mat.shape[0], jac_mat.shape[1],
-                                           2*M, 4*l+2))
-        sys.exit()
-
-    return jac_mat
-
-
 def jac_mat_calc(ra_rad, dc_rad, l_max, fit_type="full"):
     """Calculate the Jacobian matrix
 
@@ -211,20 +134,46 @@ def jac_mat_calc(ra_rad, dc_rad, l_max, fit_type="full"):
         Jacobian matrix  (M, N) (assume N unknows to determine)
     """
 
-    # Usually begins with the first degree
-    jac_mat = jac_mat_l_calc(ra_rad, dc_rad, 1, fit_type)
+    Tlmr_ra, Tlmr_dc, Tlmi_ra, Tlmi_dc = real_vec_sph_harm_proj(
+        l_max, ra_rad, dc_rad)
 
-    for l in range(2, l_max+1):
-        new_mat = jac_mat_l_calc(ra_rad, dc_rad, l, fit_type)
-        jac_mat = concatenate((jac_mat, new_mat), axis=1)
+    # Note the relation between Tlm and Slm
+    #    Slmr_ra, Slmi_ra = -Tlmr_dc, -Tlmi_dc
+    #    Slmr_dc, Slmi_dc = Tlmr_ra, Tlmi_ra
+
+    # Partial
+    par_ra = concatenate((Tlmr_ra, Tlmi_ra, -Tlmr_dc, -Tlmi_dc))
+    par_dc = concatenate((Tlmr_dc, Tlmi_dc, Tlmr_ra, Tlmi_ra))
+
+    # Treat (ra, dc) as two observations (dependent or independent)
+    # Combine the Jacobian matrix projection on RA and Decl.
+    len_par = len(par_ra)
+    jac_mat = concatenate((par_ra.reshape(1, len_par),
+                           par_dc.reshape(1, len_par)), axis=0)
+
+    # Do not forget to remove the imaginary part of m=0 term
+    num1 = int((l_max + 3) * l_max / 2)
+    ind = []
+
+    for m in range(1, l_max+1):
+        num2 = int((m+1)*m/2-1)
+
+        # The real part of m=0 terms should not be multiplied by 2
+        jac_mat[:, num2] = jac_mat[:, num2] / 2
+        jac_mat[:, num1*2+num2] = jac_mat[:, num1*2+num2] / 2
+
+        # Remove imaginmary part of m=0 terms
+        ind.append(num1+num2)
+        ind.append(num1*3+num2)
+
+    jac_mat = np.delete(jac_mat, ind, axis=1)
 
     # Check the shape of the Jacobian matrix
-    M = len(ra_rad)
     N = 2 * l_max * (l_max+2)
-    if jac_mat.shape != (2*M, N):
+    if jac_mat.shape != (2, N):
         print("Shape of Jocabian matrix is ({},{}) "
               "rather than ({},{})".format(jac_mat.shape[0], jac_mat.shape[1],
-                                           2*M, N))
+                                           2, N))
         sys.exit()
 
     return jac_mat
@@ -236,13 +185,13 @@ def nor_mat_calc(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
 
     Parameters
     ----------
-    dra_err/ddc_err : array of float
+    dra_err/ddc_err : float
         formal uncertainty of dRA(*cos(dc_rad))/dDE in uas
-    ra_rad/dc_rad : array of float
+    ra_rad/dc_rad : float
         Right ascension/Declination in radian
-    ra_dc_cov : array of float
+    ra_dc_cov : float
         correlation between dRA and dDE, default is None
-    ra_dc_cor : array of float
+    ra_dc_cor : float
         correlation coefficient between dRA and dDE, default is None
     l_max : int
         maximum degree
@@ -273,14 +222,14 @@ def nor_mat_calc(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
     nor_mat = np.dot(mul_mat, jac_mat)
 
     # Calculate right-hand-side matrix b
-    res_mat = concatenate((dra, ddc), axis=0)
+    res_mat = np.array([dra, ddc])
     rhs_mat = np.dot(mul_mat, res_mat)
 
     return nor_mat, rhs_mat
 
 
 def nor_eq_sol(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cov=None,
-               ra_dc_cor=None, l_max=1, fit_type="full", num_iter=None):
+               ra_dc_cor=None, l_max=1, fit_type="full"):
     """The 1st degree of VSH function: glide and rotation.
 
     Parameters
@@ -309,41 +258,20 @@ def nor_eq_sol(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cov=None,
         matrix of correlation coefficient.
     """
 
-    # Maxium number of sources processed per time
-    # According to my test, 100 should be a good choice``
-    if num_iter is None:
-        num_iter = 100
+    A, b = 0, 0
 
-    div = dra.size // num_iter
-    rem = dra.size % num_iter
-
-    if not ra_dc_cov is None:
-        A, b = nor_mat_calc(dra[:rem], ddc[:rem], dra_err[:rem], ddc_err[:rem],
-                            ra_rad[:rem], dc_rad[:rem], ra_dc_cov=ra_dc_cov[:rem],
-                            l_max=l_max, fit_type=fit_type)
-    elif not ra_dc_cor is None:
-        A, b = nor_mat_calc(dra[:rem], ddc[:rem], dra_err[:rem], ddc_err[:rem],
-                            ra_rad[:rem], dc_rad[:rem], ra_dc_cor=ra_dc_cor[:rem],
-                            l_max=l_max, fit_type=fit_type)
-    else:
-        A, b = nor_mat_calc(dra[:rem], ddc[:rem], dra_err[:rem], ddc_err[:rem],
-                            ra_rad[:rem], dc_rad[:rem], l_max=l_max, fit_type=fit_type)
-
-    for i in range(div):
-        sta = rem + i * num_iter
-        end = sta + num_iter
-
+    for i in range(len(dra)):
         if not ra_dc_cov is None:
-            An, bn = nor_mat_calc(dra[sta:end], ddc[sta:end], dra_err[sta:end],
-                                  ddc_err[sta:end], ra_rad[sta:end], dc_rad[sta:end],
-                                  ra_dc_cov=ra_dc_cov[sta:end], l_max=l_max, fit_type=fit_type)
+            An, bn = nor_mat_calc(dra[i], ddc[i], dra_err[i], ddc_err[i],
+                                  ra_rad[i], dc_rad[i], ra_dc_cov=ra_dc_cov[i],
+                                  l_max=l_max, fit_type=fit_type)
         elif not ra_dc_cor is None:
-            An, bn = nor_mat_calc(dra[sta:end], ddc[sta:end], dra_err[sta:end],
-                                  ddc_err[sta:end], ra_rad[sta:end], dc_rad[sta:end],
-                                  ra_dc_cor=ra_dc_cor[sta:end], l_max=l_max, fit_type=fit_type)
+            An, bn = nor_mat_calc(dra[i], ddc[i], dra_err[i], ddc_err[i],
+                                  ra_rad[i], dc_rad[i], ra_dc_cor=ra_dc_cor[i],
+                                  l_max=l_max, fit_type=fit_type)
         else:
-            An, bn = nor_mat_calc(dra[sta:end], ddc[sta:end], dra_err[sta:end],
-                                  ddc_err[sta:end], ra_rad[sta:end], dc_rad[sta:end],
+            An, bn = nor_mat_calc(dra[i], ddc[i], dra_err[i], ddc_err[i],
+                                  ra_rad[i], dc_rad[i],
                                   l_max=l_max, fit_type=fit_type)
         A = A + An
         b = b + bn

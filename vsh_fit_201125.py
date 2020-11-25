@@ -15,8 +15,7 @@ from matrix_calc import nor_eq_sol
 
 # -----------------------------  MAIN -----------------------------
 def vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cov=None,
-            ra_dc_cor=None, l_max=1, fit_type="full", pos_in_rad=False,
-            num_iter=None):
+            ra_dc_cor=None, l_max=1, fit_type="full", pos_in_rad=False):
     """
     """
 
@@ -32,8 +31,7 @@ def vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cov=None,
 
     # Do the fitting
     pmt, sig, cor_mat = nor_eq_sol(dra, ddc, dra_err, ddc_err, ra_rad,
-                                   dc_rad, ra_dc_cov, ra_dc_cor,
-                                   l_max, fit_type, num_iter)
+                                   dc_rad, ra_dc_cov, ra_dc_cor, l_max, fit_type)
 
     # TO-DO-2
     # 2.1 Calculate statistics for post-fit data

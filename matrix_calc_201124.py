@@ -20,7 +20,7 @@ from numpy import pi, concatenate
 import sys
 # My progs
 #from .vec_sph_harm import real_vec_sph_harm_proj
-from vec_sph_harm import real_vec_sph_harm_proj
+from vec_sph_harm_201124 import real_vec_sph_harm_proj
 
 
 # -----------------------------  FUNCTIONS -----------------------------
@@ -310,9 +310,10 @@ def nor_eq_sol(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cov=None,
     """
 
     # Maxium number of sources processed per time
-    # According to my test, 100 should be a good choice``
+    # ###### TO-DO #######
+    # SHOULD BE DETERMINED BASED ON TEST
     if num_iter is None:
-        num_iter = 100
+        num_iter = 10
 
     div = dra.size // num_iter
     rem = dra.size % num_iter
