@@ -19,7 +19,6 @@ import sys
 import numpy as np
 from numpy import sqrt, pi, sin, cos, exp
 from math import factorial
-from scipy.special import lpmn
 
 
 # -----------------------------  FUNCTIONS -----------------------------
@@ -65,58 +64,58 @@ def vec_sph_harm_proj(l_max, ra, dc, sph_type="T"):
 
     # Calculate A_mn(x) and B_mn(x)
     x = sin(dc)
+    num_sou = len(ra)
     fac = np.sqrt(1-x*x)
 
     # Initialize the Amn and Bmn
-    A_mat = np.zeros((l_max+1, l_max+1))
-    B_mat = np.zeros((l_max+1, l_max+1))
-    B_mat[1, 1] = 1
-    B_mat[1, 0] = 0
+    A_mat = np.zeros((l_max+1, l_max+1, num_sou))
+    B_mat = np.zeros((l_max+1, l_max+1, num_sou))
+    B_mat[1, 1, :] = 1
+    B_mat[1, 0, :] = 0
+
+    T_ra_mat = np.zeros((l_max+1, l_max+1, num_sou)) * (0+0j)
+    T_dc_mat = np.zeros((l_max+1, l_max+1, num_sou)) * (0+0j)
 
     # Generate the sequence of Bmn
     for l in range(2, l_max+1):
         for m in range(l+1)[::-1]:
             if m:
                 if l == m:
-                    B_mat[l, m] = fac * (2*m-1) * m / (m-1) * B_mat[m-1, m-1]
+                    B_mat[l, m, :] = fac * (2*m-1) * \
+                        m / (m-1) * B_mat[m-1, m-1, :]
                 elif l == m+1:
-                    B_mat[l, m] = (2*m+1) * x * B_mat[m, m]
+                    B_mat[l, m, :] = (2*m+1) * x * B_mat[m, m, :]
                 else:
-                    B_mat[l, m] = ((2*l-1)*x*B_mat[l-1, m] -
-                                   (l-1+m)*B_mat[l-2, m]) / (l-m)
+                    B_mat[l, m, :] = ((2*l-1)*x*B_mat[l-1, m, :] -
+                                      (l-1+m)*B_mat[l-2, m, :]) / (l-m)
             else:
-                B_mat[l, m] = 0
+                B_mat[l, m, :] = 0
 
     # Calculate Amn
     for l in range(1, l_max+1):
         for m in range(l+1):
             if m:
-                A_mat[l, m] = (-x*l*B_mat[l, m]+(l+m)*B_mat[l-1, m]) / m
+                A_mat[l, m, :] = (-x*l*B_mat[l, m, :]+(l+m)
+                                  * B_mat[l-1, m, :]) / m
             else:
-                A_mat[l, m] = fac * B_mat[l, 1]
-
-    # Calculate the coefficient in Eqs. (B.9-B.10)
-    fac_mat = np.zeros((l_max+1, l_max+1)) * (0+0j)
-    for l in range(1, l_max+1):
-        for m in range(l+1):
-            fac = (2*l+1) / (l*l+l) / (4*pi) * factorial(l-m) / factorial(l+m)
-            fac = (-1)**m * sqrt(fac) * exp(complex(0, m*ra))
-            fac_mat[l, m] = fac
+                A_mat[l, m, :] = fac * B_mat[l, 1, :]
 
     # Projection on ra and decl. direction
-    T_ra_mat = fac_mat * A_mat
-    T_dc_mat = fac_mat * B_mat * (0-1j)
+    for l in range(1, l_max+1):
+        for m in range(l+1):
+            # Calculate the coefficient in Eqs. (B.9-B.10)
+            fac = (2*l+1) / (l*l+l) / (4*pi) * factorial(l-m) / factorial(l+m)
+            fac = (-1)**m * sqrt(fac) * (cos(m*ra)+sin(m*ra)*(0+1j))
 
-    # Matrix -> Array
-    T_ra = mat_2_seq(T_ra_mat)
-    T_dc = mat_2_seq(T_dc_mat)
+            T_ra_mat[l, m, :] = fac * A_mat[l, m, :]
+            T_dc_mat[l, m, :] = fac * B_mat[l, m, :] * (0-1j)
 
     # Actually S-vector could be derived from T-vector
 #    S_ra = facB * (0+1j)
 #    S_dc = facA
-    if sph_type is "T":
-        return T_ra, T_dc
-    elif sph_type is "S":
+    if sph_type == "T":
+        return T_ra_mat, T_dc_mat
+    elif sph_type == "S":
         S_ra_mat = -T_dc_mat
         S_dc_mat = T_ra_mat
         return S_ra_mat, S_dc_mat
@@ -125,7 +124,7 @@ def vec_sph_harm_proj(l_max, ra, dc, sph_type="T"):
         sys.exit()
 
 
-def real_vec_sph_harm_proj(l_max, ra, dc):
+def real_vec_sph_harm_proj(l, m, T_ra_mat, T_dc_mat):
     """Calculate the real (not complex) vsh function of (l,m) at x used.
 
     VSH functions used for real expansion according to Eq.(30) in the reference.
@@ -146,19 +145,21 @@ def real_vec_sph_harm_proj(l_max, ra, dc):
         Projection of T_lm (l=1:l_max,m=0:l) vector on the e_ra and e_dec vectors.
     """
 
-    T_ra, T_dc = vec_sph_harm_proj(l_max, ra, dc)
+    T_ra, T_dc = T_ra_mat[l, m, :], T_dc_mat[l, m, :]
+# vec_sph_harm_proj(l, m, ra, dc)
+#    Maybe this step is unneccessary
+#    S_ra, S_dc = -T_dc, T_ra
 
-    # Check the shape of T_ra
-    T_len = len(T_ra)
-    exp_len = (l_max + 3) * l_max / 2
-    if T_len != exp_len:
-        print("Shape of vector harmonics sequnence at l_max={} is {}"
-              "rather than {}".format(l_max, T_len, exp_len))
-        sys.exit()
+    if m:
+        T_ra_r, T_ra_i = 2*np.real(T_ra), -2*np.imag(T_ra)
+        T_dc_r, T_dc_i = 2*np.real(T_dc), -2*np.imag(T_dc)
+        # To avoid repeated calculation
+        # S_ra_r, S_ra_i = np.real(S_ra), -np.imag(S_ra)
+        # S_dc_r, S_dc_i = np.real(S_dc), -np.imag(S_dc)
 
-    # According to Eq.(30)
-    T_ra_r, T_ra_i = 2*np.real(T_ra), -2*np.imag(T_ra)
-    T_dc_r, T_dc_i = 2*np.real(T_dc), -2*np.imag(T_dc)
-
-    return T_ra_r, T_dc_r, T_ra_i, T_dc_i
+#        return T_ra_r, T_dc_r, T_ra_i, T_dc_i, S_ra_r, S_dc_r, S_ra_i, S_dc_i
+        return T_ra_r, T_dc_r, T_ra_i, T_dc_i
+    else:
+        #        return T_ra, T_dc, S_ra, S_dc
+        return np.real(T_ra), np.real(T_dc)
 # --------------------------------- END --------------------------------

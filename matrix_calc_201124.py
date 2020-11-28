@@ -20,7 +20,7 @@ from numpy import pi, concatenate
 import sys
 # My progs
 #from .vec_sph_harm import real_vec_sph_harm_proj
-from vec_sph_harm_201124 import real_vec_sph_harm_proj
+from vsh_expension_201124 import real_vec_sph_harm_proj
 
 
 # -----------------------------  FUNCTIONS -----------------------------
@@ -231,7 +231,7 @@ def jac_mat_calc(ra_rad, dc_rad, l_max, fit_type="full"):
 
 
 def nor_mat_calc(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
-                 ra_dc_cov=None, ra_dc_cor=None, l_max=1, fit_type="full"):
+                 ra_dc_cov=None, ra_dc_cor=None, l_max=1, fit_type="full", suffix=""):
     """Cacluate the normal and right-hand-side matrix for LSQ analysis.
 
     Parameters
@@ -251,6 +251,8 @@ def nor_mat_calc(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
         "full" for T- and S-vectors both
         "T" for T-vectors only
         "S" for S-vectors only
+    suffix : string
+        suffix for output matrix file
 
     Returns
     ----------
@@ -276,7 +278,36 @@ def nor_mat_calc(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
     res_mat = concatenate((dra, ddc), axis=0)
     rhs_mat = np.dot(mul_mat, res_mat)
 
+    # Save matrice for later use
+    # np.save("jac_mat_{:s}.npy".format(suffix), jac_mat)
+
     return nor_mat, rhs_mat
+
+
+def predict_mat_calc(pmt, suffix):
+    """Calculate the predicted value
+
+    Parameters
+    ----------
+    pmt : array
+        estimate of unknowns
+    suffix : string
+        suffix for finding corresponding Jacobian matrix
+
+    Returns
+    -------
+    dra_pre : array
+        predicted offset in RA
+    ddc_pre : array
+        predicted offset in Declination
+    """
+
+    jac_mat = np.load("jac_mat_{:s}.npy".format(suffix))
+    dra_ddc = np.dot(jac_mat, pmt)
+    num_sou = int(len(dra_ddc)/2)
+    dra_pre, ddc_pre = dra_ddc[:num_sou], dra_ddc[num_sou:]
+
+    return dra_pre, ddc_pre
 
 
 def nor_eq_sol(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cov=None,
@@ -302,7 +333,7 @@ def nor_eq_sol(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cov=None,
     Returns
     ----------
     pmt : array of float
-        estimaation of (d1, d2, d3, r1, r2, r3) in uas
+        estimation of (d1, d2, d3, r1, r2, r3) in uas
     sig : array of float
         uncertainty of x in uas
     cor_mat : matrix
@@ -310,42 +341,50 @@ def nor_eq_sol(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cov=None,
     """
 
     # Maxium number of sources processed per time
-    # ###### TO-DO #######
-    # SHOULD BE DETERMINED BASED ON TEST
+    # According to my test, 100 should be a good choice
     if num_iter is None:
-        num_iter = 10
+        num_iter = 100
 
     div = dra.size // num_iter
     rem = dra.size % num_iter
+    suffix_array = []
+    A, b = 0, 0
 
-    if not ra_dc_cov is None:
-        A, b = nor_mat_calc(dra[:rem], ddc[:rem], dra_err[:rem], ddc_err[:rem],
-                            ra_rad[:rem], dc_rad[:rem], ra_dc_cov=ra_dc_cov[:rem],
-                            l_max=l_max, fit_type=fit_type)
-    elif not ra_dc_cor is None:
-        A, b = nor_mat_calc(dra[:rem], ddc[:rem], dra_err[:rem], ddc_err[:rem],
-                            ra_rad[:rem], dc_rad[:rem], ra_dc_cor=ra_dc_cor[:rem],
-                            l_max=l_max, fit_type=fit_type)
-    else:
-        A, b = nor_mat_calc(dra[:rem], ddc[:rem], dra_err[:rem], ddc_err[:rem],
-                            ra_rad[:rem], dc_rad[:rem], l_max=l_max, fit_type=fit_type)
+    if rem:
+        suffix_array.append("{:05d}".format(0))
+        if not ra_dc_cov is None:
+            A, b = nor_mat_calc(dra[: rem], ddc[: rem], dra_err[: rem], ddc_err[: rem],
+                                ra_rad[: rem], dc_rad[: rem], ra_dc_cov=ra_dc_cov[: rem],
+                                l_max=l_max, fit_type=fit_type, suffix=suffix_array[0])
+        elif not ra_dc_cor is None:
+            A, b = nor_mat_calc(dra[: rem], ddc[: rem], dra_err[: rem], ddc_err[: rem],
+                                ra_rad[: rem], dc_rad[: rem], ra_dc_cor=ra_dc_cor[: rem],
+                                l_max=l_max, fit_type=fit_type, suffix=suffix_array[0])
+        else:
+            A, b = nor_mat_calc(dra[: rem], ddc[: rem], dra_err[: rem], ddc_err[: rem],
+                                ra_rad[: rem], dc_rad[: rem], l_max=l_max, fit_type=fit_type,
+                                suffix=suffix_array[0])
 
     for i in range(div):
         sta = rem + i * num_iter
         end = sta + num_iter
+        suffix_array.append("{:05d}".format(i+1))
 
         if not ra_dc_cov is None:
-            An, bn = nor_mat_calc(dra[sta:end], ddc[sta:end], dra_err[sta:end],
-                                  ddc_err[sta:end], ra_rad[sta:end], dc_rad[sta:end],
-                                  ra_dc_cov=ra_dc_cov[sta:end], l_max=l_max, fit_type=fit_type)
+            An, bn = nor_mat_calc(dra[sta: end], ddc[sta: end], dra_err[sta: end],
+                                  ddc_err[sta: end], ra_rad[sta: end], dc_rad[sta: end],
+                                  ra_dc_cov=ra_dc_cov[sta: end], l_max=l_max, fit_type=fit_type,
+                                  suffix=suffix_array[-1])
         elif not ra_dc_cor is None:
-            An, bn = nor_mat_calc(dra[sta:end], ddc[sta:end], dra_err[sta:end],
-                                  ddc_err[sta:end], ra_rad[sta:end], dc_rad[sta:end],
-                                  ra_dc_cor=ra_dc_cor[sta:end], l_max=l_max, fit_type=fit_type)
+            An, bn = nor_mat_calc(dra[sta: end], ddc[sta: end], dra_err[sta: end],
+                                  ddc_err[sta: end], ra_rad[sta: end], dc_rad[sta: end],
+                                  ra_dc_cor=ra_dc_cor[sta: end], l_max=l_max, fit_type=fit_type,
+                                  suffix=suffix_array[-1])
         else:
-            An, bn = nor_mat_calc(dra[sta:end], ddc[sta:end], dra_err[sta:end],
-                                  ddc_err[sta:end], ra_rad[sta:end], dc_rad[sta:end],
-                                  l_max=l_max, fit_type=fit_type)
+            An, bn = nor_mat_calc(dra[sta: end], ddc[sta: end], dra_err[sta: end],
+                                  ddc_err[sta: end], ra_rad[sta: end], dc_rad[sta: end],
+                                  l_max=l_max, fit_type=fit_type,
+                                  suffix=suffix_array[-1])
         A = A + An
         b = b + bn
 
@@ -357,6 +396,20 @@ def nor_eq_sol(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cov=None,
     # Formal uncertainty and correlation coefficient
     sig, cor_mat = cov_to_cor(cov_mat)
 
+    # # Calculate residuals
+    # dra_pre, ddc_pre = predict_mat_calc(pmt, suffix_array[0])
+    # for i in range(1, len(suffix_array)):
+    #     dra_prei, ddc_prei = predict_mat_calc(pmt, suffix_array[i])
+    #     dra_pre = concatenate((dra_pre, dra_prei))
+    #     ddc_pre = concatenate((ddc_pre, ddc_prei))
+    #
+    # dra1, ddc1 = dra - dra_pre, ddc - ddc_pre
+    #
+    # # Delete Jacobian matrix file
+    # for suffix in suffix_array:
+    #     os.system("rm jac_mat_{:s}.npy".format(suffix))
+
     # Return the result.
+    # return pmt, sig, cor_mat, dra1, ddc1
     return pmt, sig, cor_mat
 # --------------------------------- END --------------------------------

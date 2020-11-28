@@ -10,15 +10,14 @@ Created on Tue Nov 17 13:48:25 2020
 import sys
 import numpy as np
 # My progs
-from matrix_calc_201124 import nor_eq_sol
+from matrix_calc_201128 import nor_eq_sol
 from vsh_significance import check_vsh_sig
 from vsh_aux_info import prefit_check, prefit_info
 from vsh_stat import print_stats_info, residual_statistics_calc
 from pmt_convert import convert_ts_to_rotgli
 
+
 # -----------------------------  MAIN -----------------------------
-
-
 def vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cov=None,
             ra_dc_cor=None, l_max=1, fit_type="full", pos_in_rad=False,
             num_iter=100):
@@ -87,11 +86,10 @@ def vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cov=None,
     # pmt, sig, cor_mat, dra1, ddc1 = nor_eq_sol(dra, ddc, dra_err, ddc_err, ra_rad,
     #                                            dc_rad, ra_dc_cov, ra_dc_cor,
     #                                            l_max, fit_type, num_iter)
+    # Calculate residual of observation equations
 
-    # # Calculate residual of observation equations
-    #
-    # # Step 3: Calculate statistics of data
-    # # for pre-fit data
+    # Step 3: Calculate statistics of data
+    # for pre-fit data
     # apr_statis = residual_statistics_calc(dra, ddc, dra_err, ddc_err, ra_dc_cov,
     #                                       ra_dc_cor, num_dof)
     #
@@ -111,9 +109,6 @@ def vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cov=None,
     #
     # # First degrees -> rotation/glide
     # convert_ts_to_rotgli(pmt, sig, cor_mat)
-    #
-    # return pmt, sig, cor_mat
-
     pmt, sig, cor_mat = nor_eq_sol(dra, ddc, dra_err, ddc_err, ra_rad,
                                    dc_rad, ra_dc_cov, ra_dc_cor,
                                    l_max, fit_type, num_iter)

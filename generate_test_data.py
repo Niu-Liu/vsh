@@ -31,8 +31,8 @@ def generate_test_sample(sample_size, pmt_vec):
     dra_calc, ddec_calc = vsh_func(ra, dec, pmt_vec)
 
     # Noise
-    dra_nois = np.random.normal(scale=100, size=sample_size)
-    ddec_nois = np.random.normal(scale=100, size=sample_size)
+    dra_nois = np.random.normal(scale=1, size=sample_size) * 0
+    ddec_nois = np.random.normal(scale=1, size=sample_size) * 0
 
     # Simulation data
     dra_sim, ddec_sim = dra_calc + dra_nois, ddec_calc + ddec_nois

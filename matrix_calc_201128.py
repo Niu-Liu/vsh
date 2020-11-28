@@ -21,7 +21,7 @@ import numpy as np
 from numpy import pi, concatenate
 # My progs
 # from .vsh_expension import real_vec_sph_harm_proj
-from vsh_expension import real_vec_sph_harm_proj, vec_sph_harm_proj
+from vsh_expension_201128 import real_vec_sph_harm_proj, vec_sph_harm_proj
 
 
 # -----------------------------  FUNCTIONS -----------------------------
@@ -278,7 +278,7 @@ def nor_mat_calc(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
     rhs_mat = np.dot(mul_mat, res_mat)
 
     # Save matrice for later use
-    np.save("jac_mat_{:s}.npy".format(suffix), jac_mat)
+    # np.save("jac_mat_{:s}.npy".format(suffix), jac_mat)
 
     return nor_mat, rhs_mat
 
@@ -395,19 +395,20 @@ def nor_eq_sol(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cov=None,
     # Formal uncertainty and correlation coefficient
     sig, cor_mat = cov_to_cor(cov_mat)
 
-    # Calculate residuals
-    dra_pre, ddc_pre = predict_mat_calc(pmt, suffix_array[0])
-    for i in range(1, len(suffix_array)):
-        dra_prei, ddc_prei = predict_mat_calc(pmt, suffix_array[i])
-        dra_pre = concatenate((dra_pre, dra_prei))
-        ddc_pre = concatenate((ddc_pre, ddc_prei))
-
-    dra1, ddc1 = dra - dra_pre, ddc - ddc_pre
-
-    # Delete Jacobian matrix file
-    for suffix in suffix_array:
-        os.system("rm jac_mat_{:s}.npy".format(suffix))
+    # # Calculate residuals
+    # dra_pre, ddc_pre = predict_mat_calc(pmt, suffix_array[0])
+    # for i in range(1, len(suffix_array)):
+    #     dra_prei, ddc_prei = predict_mat_calc(pmt, suffix_array[i])
+    #     dra_pre = concatenate((dra_pre, dra_prei))
+    #     ddc_pre = concatenate((ddc_pre, ddc_prei))
+    #
+    # dra1, ddc1 = dra - dra_pre, ddc - ddc_pre
+    #
+    # # Delete Jacobian matrix file
+    # for suffix in suffix_array:
+    #     os.system("rm jac_mat_{:s}.npy".format(suffix))
 
     # Return the result.
-    return pmt, sig, cor_mat, dra1, ddc1
+    # return pmt, sig, cor_mat, dra1, ddc1
+    return pmt, sig, cor_mat
 # --------------------------------- END --------------------------------
