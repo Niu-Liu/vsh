@@ -199,6 +199,9 @@ def jac_mat_calc(ra_rad, dc_rad, l_max, fit_type='full'):
     # Calculate all the VSH terms at one time
     T_ra_mat, T_dc_mat = vec_sph_harm_proj(l_max, ra_rad, dc_rad)
 
+    # Calculate all the VSH terms at one time
+    T_ra_mat, T_dc_mat = vec_sph_harm_proj(l_max, ra_rad, dc_rad)
+
     # Usually begins with the first degree
     jac_mat = jac_mat_l_calc(T_ra_mat, T_dc_mat, 1, fit_type)
 
