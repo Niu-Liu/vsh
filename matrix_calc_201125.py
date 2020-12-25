@@ -15,12 +15,14 @@ and b the right-hand-side array.
 
 """
 
+import sys
+import os
 import numpy as np
 from numpy import pi, concatenate
-import sys
+
 # My progs
-#from .vec_sph_harm import real_vec_sph_harm_proj
-from vec_sph_harm import real_vec_sph_harm_proj
+# from .vsh_expension import real_vec_sph_harm_proj
+from vsh_expension_201125 import real_vec_sph_harm_proj
 
 
 # -----------------------------  FUNCTIONS -----------------------------
@@ -182,7 +184,6 @@ def jac_mat_calc(ra_rad, dc_rad, l_max, fit_type="full"):
 def nor_mat_calc(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
                  ra_dc_cov=None, ra_dc_cor=None, l_max=1, fit_type="full"):
     """Cacluate the normal and right-hand-side matrix for LSQ analysis.
-
     Parameters
     ----------
     dra_err/ddc_err : float
@@ -200,7 +201,6 @@ def nor_mat_calc(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
         "full" for T- and S-vectors both
         "T" for T-vectors only
         "S" for S-vectors only
-
     Returns
     ----------
     nor_mat : array of float
@@ -231,7 +231,6 @@ def nor_mat_calc(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
 def nor_eq_sol(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cov=None,
                ra_dc_cor=None, l_max=1, fit_type="full"):
     """The 1st degree of VSH function: glide and rotation.
-
     Parameters
     ----------
     dra/ddc : array of float
@@ -247,7 +246,6 @@ def nor_eq_sol(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cov=None,
         "full" for T- and S-vectors both
         "T" for T-vectors only
         "S" for S-vectors only
-
     Returns
     ----------
     pmt : array of float
@@ -286,4 +284,5 @@ def nor_eq_sol(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cov=None,
 
     # Return the result.
     return pmt, sig, cor_mat
+
 # --------------------------------- END --------------------------------

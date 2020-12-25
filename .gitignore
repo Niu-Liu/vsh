@@ -142,3 +142,5 @@ cython_debug/
 
 # Jupyter notebook 
 .ipynb_checkpoints/
+test/
+seb/

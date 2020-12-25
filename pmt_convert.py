@@ -12,7 +12,7 @@ Convert S&T parameters into familiar rotation/glide/quadrupolar ones
 import sys
 import numpy as np
 # My progs
-from matrix_calc import cor_to_cov, cov_to_cor
+from .matrix_calc import cor_to_cov, cov_to_cor
 
 
 # Scaling factors between S/T and rotation/glide/quadrupolar parameters
@@ -139,5 +139,34 @@ def st_to_rotgldquad(pmt, err, cor_mat):
 
     return grq_vec, grq_err, grq_cor_mat
 
-# -----------------------------  MAIN -----------------------------
+
+def convert_ts_to_rotgli(pmt, err, cor_mat):
+    """Print Rotation/glide converted from t_lm and s_lm
+    """
+
+    pmt1, err1, cor_mat1 = st_to_rotgld(pmt[:6], err[:6], cor_mat[:6])
+
+    print("")
+    print("Convert t_lm/s_lm at l=1 into rotation/glide vector")
+    print("--------------------------------------------------------------------")
+    print("           Glide [uas]             "
+          "           Rotation [uas]          ")
+    print("  G1         G2        G3       "
+          "  R1         R2        R3        ")
+    print("--------------------------------------------------------------------")
+    print("{0:4.0f} {6:4.0f}  {1:4.0f} {7:4.0f} "
+          "{2:4.0f} {8:4.0f}  {3:4.0f} {9:4.0f} "
+          "{4:4.0f} {10:4.0f}  {5:4.0f} {11:4.0f}  ".format(*pmt1[:6], *err1[:6]))
+    print("--------------------------------------------------------------------")
+
+
+def main():
+    '''Not implemented yet
+
+    '''
+    pass
+
+
+if __name__ == '__main__':
+    main()
 # --------------------------------- END --------------------------------
