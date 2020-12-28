@@ -10,7 +10,7 @@ Created on Tue Nov 17 13:48:25 2020
 import sys
 import numpy as np
 # My progs
-from .matrix_calc import nor_eq_sol, calc_residual
+from .matrix_calc import nor_eq_sol, residual_calc
 from .vsh_significance import check_vsh_sig
 from .vsh_aux_info import prefit_check, prefit_info
 from .vsh_stats import print_stats_info, residual_stats_calc
@@ -81,7 +81,7 @@ def vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=None,
     num_dof = 2 * num_sou - num_pmt - 1
 
     # 1.2 Print basic information
-    print("---------------------- VSH Fit (by Niu LIU) ----------------------")
+    print("----------------------- VSH Fit (by Niu LIU) -----------------------")
     prefit_info(num_sou, num_pmt, num_dof, l_max)
 
     # Step 2: Fitting
@@ -93,8 +93,8 @@ def vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=None,
             l_max=l_max, fit_type=fit_type, num_iter=num_iter)
 
     elif isinstance(clip_limit, (int, float)):
-        print("The fit will be iterated until it converges, "
-              "that is, no more outliers, based on a clean sample of "
+        print("The fit will be iterated until it converges, that is, no more outliers, "
+              "\nbased on a clean sample of "
               "a normalized separation X<={:.3f}*median(X).\n".format(clip_limit))
 
         # Fitting with auto-elimination
@@ -167,7 +167,7 @@ def vsh_fit_4_Table(data_tab, l_max=1, fit_type="full", pos_in_rad=False,
     elif "pmra" in data_tab.colnames:
         dra = np.array(data_tab["pmra"])
     else:
-        print(""dra" or "pmra" is not specificed.")
+        print("'dra' or 'pmra' is not specificed.")
         exit(1)
 
     if "ddec" in data_tab.colnames:
@@ -175,7 +175,7 @@ def vsh_fit_4_Table(data_tab, l_max=1, fit_type="full", pos_in_rad=False,
     elif "pmdec" in data_tab.colnames:
         ddec = np.array(data_tab["pmdec"])
     else:
-        print(""ddec" or "pmdec" is not specificed.")
+        print("'ddec' or 'pmdec' is not specificed.")
         exit(1)
 
     ra = np.array(data_tab["ra"])

@@ -13,7 +13,9 @@ import numpy as np
 
 # My progs
 from .stats_func import calc_nor_sep
-from .matrix_calc import nor_eq_sol, calc_residual
+from .matrix_calc import (nor_eq_sol_from_cache, nor_eq_sol,
+                          residual_calc_from_cache,
+                          cache_mat_calc, rm_cache_mat)
 
 
 # ----------------------------- Function -----------------------------
@@ -25,18 +27,18 @@ def extract_data(mask, dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cor=Non
     mask : array of boolean
         mask for extract data
     dra/ddc : array of float
-        R.A.(*cos(Dec.))/Dec. differences in uas
+        R.A.(*cos(Dec.))/Dec. differences
     dra_err/ddc_err : array of float
-        formal uncertainty of dra(*cos(dc_rad))/ddc in uas
+        formal uncertainty of dra(*cos(dc_rad))/ddc
     ra_rad/dc_rad : array of float
         Right ascension/Declination in radian
 
     Returns
     ----------
     dra_new/ddc_new: array of float
-        R.A.(*cos(Dec.))/Dec for the clean sample. differences in uas
+        R.A.(*cos(Dec.))/Dec for the clean sample. differences
     dra_err_new/ddc_err_new: array of float
-        formal uncertainty of dra(*cos(dc_rad))/ddc in uas for the clean sample
+        formal uncertainty of dra(*cos(dc_rad))/ddc for the clean sample
     ra_rad_new/dc_rad_new: array of float
         Right ascension/Declination in radian for the clean sample
     ra_dc_cor_new: array of float
@@ -62,9 +64,9 @@ def elim_on_nor_sep(clip_limit, dra, ddc, dra_err, ddc_err, ra_dc_cor=None):
     Parameters
     ----------
     dra/ddc: array of float
-        R.A.(*cos(Dec.))/Dec. differences in uas
+        R.A.(*cos(Dec.))/Dec. differences
     dra_err/ddc_err: array of float
-        formal uncertainty of dra(*cos(dc_rad))/ddc in uas
+        formal uncertainty of dra(*cos(dc_rad))/ddc
     ra_rad/dc_rad: array of float
         Right ascension/Declination in radian
     clip_limit: int ot float
@@ -75,9 +77,9 @@ def elim_on_nor_sep(clip_limit, dra, ddc, dra_err, ddc_err, ra_dc_cor=None):
     Returns
     ----------
     dra_new/ddc_new: array of float
-        R.A.(*cos(Dec.))/Dec for the clean sample. differences in uas
+        R.A.(*cos(Dec.))/Dec for the clean sample. differences
     dra_err_new/ddc_err_new: array of float
-        formal uncertainty of dra(*cos(dc_rad))/ddc in uas for the clean sample
+        formal uncertainty of dra(*cos(dc_rad))/ddc for the clean sample
     ra_rad_new/dc_rad_new: array of float
         Right ascension/Declination in radian for the clean sample
     ra_dc_cor_new: array of float
@@ -104,9 +106,9 @@ def auto_elim_vsh_fit(clip_limit, dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
     clip_limit: float
         thershold on normalized separation for auto-elimination
     dra/ddc: array of float
-        R.A.(*cos(Dec.))/Dec. differences in uas
+        R.A.(*cos(Dec.))/Dec. differences
     dra_err/ddc_err: array of float
-        formal uncertainty of dra(*cos(dc_rad))/ddc in uas
+        formal uncertainty of dra(*cos(dc_rad))/ddc
     ra_rad/dc_rad: array of float
         Right ascension/Declination in radian
     ra_dc_cor: array of float
@@ -126,9 +128,9 @@ def auto_elim_vsh_fit(clip_limit, dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
     Returns
     ----------
     pmt: array of float
-        estimation of(d1, d2, d3, r1, r2, r3) in uas
+        estimation of(d1, d2, d3, r1, r2, r3)
     sig: array of float
-        uncertainty of x in uas
+        uncertainty of x
     cor_mat: matrix
         matrix of correlation coefficient.
     """
@@ -139,10 +141,16 @@ def auto_elim_vsh_fit(clip_limit, dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
 
     # mask1 = All True
     mask1 = np.full(len(dra), True)
-    num_iter = 0
+    iter_count = 0
 
+    # first elimination
     max_nor_sep2, mask2 = elim_on_nor_sep(
         clip_limit, dra, ddc, dra_err, ddc_err, ra_dc_cor)
+
+    # Generate cache matrix
+    suffix_array = cache_mat_calc(
+        dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
+        ra_dc_cor=ra_dc_cor, l_max=l_max, fit_type=fit_type, num_iter=num_iter)
 
     while np.any(mask1 != mask2):
         # Renew the flags
@@ -150,31 +158,32 @@ def auto_elim_vsh_fit(clip_limit, dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
 
         # Generate a clean sample
         [dra1, ddc1, dra_err1, ddc_err1, ra_rad1, dc_rad1, ra_dc_cor1] = extract_data(
-            mask1, dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cor=None)
+            mask1, dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cor)
 
-        num_iter += 1
+        iter_count += 1
         print("    {:11d}    {:9d}    {:9d}    {:9.3f}".format(
-            num_iter, len(dra1), len(dra)-len(dra1), max_nor_sep1))
+            iter_count, len(dra1), len(dra)-len(dra1), max_nor_sep1))
 
-        pmt, sig, cor_mat = nor_eq_sol(dra1, ddc1, dra_err1, ddc_err1,
-                                       ra_rad1, dc_rad1, ra_dc_cor=ra_dc_cor1,
-                                       l_max=l_max, fit_type=fit_type,
-                                       num_iter=num_iter, calc_res=False)
+        pmt, sig, cor_mat = nor_eq_sol(
+            dra1, ddc1, dra_err1, ddc_err1, ra_rad1, dc_rad1,
+            ra_dc_cor=ra_dc_cor1, l_max=l_max, fit_type=fit_type,
+            num_iter=num_iter, calc_res=False)
 
         # Calculate residuals for all sources
-        dra_r, ddc_r = calc_residual(
-            dra, ddc, ra_rad, dc_rad, pmt, l_max, fit_type, num_iter)
+        dra_r, ddc_r = residual_calc_from_cache(
+            dra, ddc, pmt, suffix_array)
 
         # Re-eliminate the data
         max_nor_sep2, mask2 = elim_on_nor_sep(
             clip_limit, dra_r, ddc_r, dra_err, ddc_err, ra_dc_cor)
 
     # If no source is classified as outlier
-    if num_iter == 0:
-        pmt, sig, cor_mat, dra_r, ddc_r = nor_eq_sol(dra, ddc, dra_err, ddc_err,
-                                                     ra_rad, dc_rad, ra_dc_cor=ra_dc_cor,
-                                                     l_max=l_max, fit_type=fit_type,
-                                                     num_iter=num_iter, calc_res=False)
+    if iter_count == 0:
+        pmt, sig, cor_mat, dra_r, ddc_r = nor_eq_sol_from_cache(
+            dra, ddc, suffix_array, num_iter=num_iter)
+
+    # Remove cache file
+    rm_cache_mat(suffix_array)
 
     return pmt, sig, cor_mat, dra_r, ddc_r
 

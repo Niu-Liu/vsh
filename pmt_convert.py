@@ -24,7 +24,7 @@ FAC5 = np.sqrt(5. / 16 / np.pi)
 
 
 # -----------------------------  MAIN -----------------------------
-def st_to_rotgld(pmt, err, cor_mat):
+def st_to_rotgld(pmt, err, cor_mat, fit_type='full'):
     """Transformation from degree 1 S&T-vector to rotation&glide vector
 
     pmt = (t10, s10, t11r, s11r, t11i, s11i)
@@ -51,8 +51,13 @@ def st_to_rotgld(pmt, err, cor_mat):
         correlation coefficient matrix
     """
 
-    if len(pmt) != 6 or len(err) != 6:
-        print("Length of S&T-vector should be equal to 6")
+    if fit_type in ['full', 'FULL', 'Full']:
+        len_vec = 6
+    elif fit_type in ['S', 'T', 's', 't']:
+        len_vec = 3
+
+    if len(pmt) != len_vec or len(err) != len_vec:
+        print("Length of S&T-vector should be equal to {}".format(len_vec))
         sys.exit()
 
     # Transformation matrix
@@ -62,12 +67,18 @@ def st_to_rotgld(pmt, err, cor_mat):
     #    R3 = FAC2 * T10
     # It should be same from (S10, S11r, S11i) to (G1, G2, G3)
 
-    TSF_MAT = np.array([[0, 0, 0, -FAC1, 0, 0],
-                        [0, 0, 0, 0, 0, FAC1],
-                        [0, FAC2, 0, 0, 0, 0],
-                        [0, 0, -FAC1, 0, 0, 0],
-                        [0, 0, 0, 0, FAC1, 0],
-                        [FAC2, 0, 0, 0, 0, 0]])
+    if fit_type in ['full', 'FULL', 'Full']:
+        TSF_MAT = np.array([[0, 0, 0, -FAC1, 0, 0],
+                            [0, 0, 0, 0, 0, FAC1],
+                            [0, FAC2, 0, 0, 0, 0],
+                            [0, 0, -FAC1, 0, 0, 0],
+                            [0, 0, 0, 0, FAC1, 0],
+                            [FAC2, 0, 0, 0, 0, 0]])
+
+    elif fit_type in ['S', 's', 'T', 't']:
+        TSF_MAT = np.array([[0, -FAC1, 0],
+                            [0, 0, FAC1],
+                            [FAC2, 0, 0]])
 
     # Glide &Rotation vector
     gr_vec = np.dot(TSF_MAT, pmt)
@@ -95,7 +106,12 @@ def st_to_rotgldquad(pmt, err, cor_mat):
 
     """
 
-    if len(pmt) != 16 or len(err) != 16:
+    if fit_type in ['full', 'FULL', 'Full']:
+        len_vec = 16
+    elif fit_type in ['S', 'T', 's', 't']:
+        len_vec = 8
+
+    if len(pmt) != len_vec or len(err) != len_vec:
         print("Length of S&T-vector should be equal to 16")
         sys.exit()
 
@@ -111,22 +127,32 @@ def st_to_rotgldquad(pmt, err, cor_mat):
     # It should be same from (S20, S21r, S21i, S22r, S22i) to (E20, E21R, E21I, E22R,
     # E22I)
 
-    TSF_MAT = np.array([[0, 0, 0, -FAC1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, FAC1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, FAC2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, -FAC1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, FAC1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [FAC2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FAC5, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FAC5],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, FAC4, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FAC4, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, FAC3, 0, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FAC5, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FAC5, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, FAC4, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FAC4, 0, 0, 0, 0, 0],
-                        [0, 0, 0, 0, 0, 0, FAC3, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
+    if fit_type in ['full', 'FULL', 'Full']:
+        TSF_MAT = np.array([[0, 0, 0, -FAC1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, FAC1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, FAC2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, -FAC1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, FAC1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [FAC2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FAC5, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FAC5],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0, FAC4, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FAC4, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, FAC3, 0, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FAC5, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FAC5, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, FAC4, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, FAC4, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, FAC3, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
+    else:
+        TSF_MAT = np.array([[0, -FAC1, 0, 0, 0, 0, 0, 0],
+                            [0, 0, FAC1, 0, 0, 0, 0, 0],
+                            [FAC2, 0, 0, 0, 0, 0, 0, 0],
+                            [0, 0, 0, 0, 0, FAC5, 0, 0],
+                            [0, 0, 0, 0, 0, 0, FAC5, 0],
+                            [0, 0, 0, FAC4, 0, 0, 0, 0],
+                            [0, 0, 0, 0, FAC4, 0, 0, 0],
+                            [0, 0, 0, 0, 0, 0, 0, FAC3]])
 
     # Glide &Rotation vector
     grq_vec = np.dot(TSF_MAT, pmt)
@@ -149,14 +175,14 @@ def convert_ts_to_rotgli(pmt, err, cor_mat):
     print("")
     print("Convert t_lm/s_lm at l=1 into rotation/glide vector")
     print("--------------------------------------------------------------------")
-    print("           Glide [uas]             "
-          "           Rotation [uas]          ")
+    print("           Glide [uas]      "
+          "           Rotation [uas]   ")
     print("  G1         G2        G3       "
-          "  R1         R2        R3        ")
+          "  R1         R2        R3       ")
     print("--------------------------------------------------------------------")
-    print("{0:4.0f} {6:4.0f}  {1:4.0f} {7:4.0f} "
-          "{2:4.0f} {8:4.0f}  {3:4.0f} {9:4.0f} "
-          "{4:4.0f} {10:4.0f}  {5:4.0f} {11:4.0f}  ".format(*pmt1[:6], *err1[:6]))
+    print("{0:+4.0f} {6:4.0f}  {1:+4.0f} {7:4.0f} "
+          "{2:+4.0f} {8:4.0f}  {3:+4.0f} {9:4.0f} "
+          "{4:+4.0f} {10:4.0f}  {5:+4.0f} {11:4.0f}  ".format(*pmt1[:6], *err1[:6]))
     print("--------------------------------------------------------------------")
 
 

@@ -14,8 +14,7 @@ from numpy import sin, cos
 
 
 # -----------------------------  MAIN -----------------------------
-def vsh_func01(ra, dec,
-               g1, g2, g3, r1, r2, r3):
+def vsh_func01(ra, dec, g1, g2, g3, r1, r2, r3):
     """VSH function of the first degree.
 
     Parameters
