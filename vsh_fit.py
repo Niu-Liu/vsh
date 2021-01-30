@@ -130,7 +130,7 @@ def vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=None,
     return pmt, sig, cor_mat
 
 
-def vsh_fit_4_Table(data_tab, l_max=1, fit_type="full", pos_in_rad=False,
+def vsh_fit_4_table(data_tab, l_max=1, fit_type="full", pos_in_rad=False,
                     num_iter=100, clip_limit=None):
     """VSH fit for Atstropy.Table
 
@@ -168,15 +168,15 @@ def vsh_fit_4_Table(data_tab, l_max=1, fit_type="full", pos_in_rad=False,
         dra = np.array(data_tab["pmra"])
     else:
         print("'dra' or 'pmra' is not specificed.")
-        exit(1)
+        sys.exit(1)
 
     if "ddec" in data_tab.colnames:
-        ddec = np.array(data_tab["dra"])
+        ddec = np.array(data_tab["ddec"])
     elif "pmdec" in data_tab.colnames:
         ddec = np.array(data_tab["pmdec"])
     else:
         print("'ddec' or 'pmdec' is not specificed.")
-        exit(1)
+        sys.exit(1)
 
     ra = np.array(data_tab["ra"])
     dec = np.array(data_tab["dec"])
@@ -185,25 +185,25 @@ def vsh_fit_4_Table(data_tab, l_max=1, fit_type="full", pos_in_rad=False,
         dra_err = np.array(data_tab["dra_err"])
     elif "dra_error" in data_tab.colnames:
         dra_err = np.array(data_tab["dra_error"])
-    if "pmra_err" in data_tab.colnames:
+    elif "pmra_err" in data_tab.colnames:
         dra_err = np.array(data_tab["pmra_err"])
     elif "pmra_error" in data_tab.colnames:
         dra_err = np.array(data_tab["pmra_error"])
     else:
         print("'dra_err', 'dra_error', 'pmra_err' or 'pmra_error' is not specificed.")
-        exit(1)
+        sys.exit(1)
 
     if "ddec_err" in data_tab.colnames:
         ddec_err = np.array(data_tab["ddec_err"])
     elif "ddec_error" in data_tab.colnames:
         ddec_err = np.array(data_tab["ddec_error"])
-    if "pmdec_err" in data_tab.colnames:
+    elif "pmdec_err" in data_tab.colnames:
         ddec_err = np.array(data_tab["pmdec_err"])
     elif "pmdec_error" in data_tab.colnames:
         ddec_err = np.array(data_tab["pmdec_error"])
     else:
         print("'ddec_err', 'ddec_error', 'pmdec_err' or 'pmdec_error' is not specificed.")
-        exit(1)
+        sys.exit(1)
 
     if "dra_ddec_cov" in data_tab.colnames:
         dra_ddc_cov = np.array(data_tab["dra_ddec_cov"])
@@ -215,17 +215,18 @@ def vsh_fit_4_Table(data_tab, l_max=1, fit_type="full", pos_in_rad=False,
     else:
         dra_ddc_cor = None
 
-    # DO the LSQ fitting
+    # Do the LSQ fitting
     pmt, err, cor_mat = vsh_fit(dra, ddec, dra_err, ddec_err, ra, dec,
                                 ra_dc_cor=dra_ddc_cor, l_max=l_max,
                                 pos_in_rad=pos_in_rad, num_iter=num_iter,
-                                clip_limit=clip_limit)
+                                clip_limit=clip_limit, fit_type=fit_type)
 
     return pmt, err, cor_mat
 
 
-def rotgli_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=None,
-               l_max=1, fit_type="full", pos_in_rad=False, num_iter=100, clip_limit=None):
+def rotgli_fit(dra, ddc, dra_err, ddc_err, ra, dc,
+               ra_dc_cor=None, l_max=1, fit_type="full",
+               pos_in_rad=False, num_iter=100, clip_limit=None):
     """VSH degree 01 fit and return rotation &glide
 
     Parameters
@@ -314,8 +315,9 @@ def rotgliquad_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=None,
         sys.exit(1)
 
     # VSH fit
-    pmt, err, cor_mat = vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=ra_dc_cor,
-                                l_max=l_max, fit_type=fit_type, pos_in_rad=pos_in_rad,
+    pmt, err, cor_mat = vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc,
+                                ra_dc_cor=ra_dc_cor, l_max=l_max,
+                                fit_type=fit_type, pos_in_rad=pos_in_rad,
                                 num_iter=num_iter, clip_limit=clip_limit)
 
     pmt2, err2, cor_mat2 = st_to_rotgldquad(
@@ -324,7 +326,7 @@ def rotgliquad_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=None,
     return pmt2, err2, cor_mat2
 
 
-def rotgli_fit_4_Table(data_tab, l_max=1, fit_type="full", pos_in_rad=False,
+def rotgli_fit_4_table(data_tab, l_max=1, fit_type="full", pos_in_rad=False,
                        num_iter=100, clip_limit=None):
     """VSH degree 01 fit and return rotation &glide vectors for Atstropy.Table
 
@@ -356,7 +358,7 @@ def rotgli_fit_4_Table(data_tab, l_max=1, fit_type="full", pos_in_rad=False,
     """
 
     # VSH fit
-    pmt, err, cor_mat = vsh_fit_4_Table(
+    pmt, err, cor_mat = vsh_fit_4_table(
         data_tab, l_max=l_max, fit_type=fit_type, pos_in_rad=pos_in_rad,
         num_iter=num_iter, clip_limit=clip_limit)
 
@@ -365,7 +367,7 @@ def rotgli_fit_4_Table(data_tab, l_max=1, fit_type="full", pos_in_rad=False,
     return pmt1, err1, cor_mat1
 
 
-def rotgliquad_fit_4_Table(data_tab, l_max=2, fit_type="full", pos_in_rad=False,
+def rotgliquad_fit_4_table(data_tab, l_max=2, fit_type="full", pos_in_rad=False,
                            num_iter=100, clip_limit=None):
     """VSH degree 02 fit and return rotation, glide, &quadrupolar vectors for Atstropy.Table
 
@@ -407,12 +409,12 @@ def rotgliquad_fit_4_Table(data_tab, l_max=2, fit_type="full", pos_in_rad=False,
         sys.exit(1)
 
     # VSH fit
-    pmt, err, cor_mat = vsh_fit_4_Table(
+    pmt, err, cor_mat = vsh_fit_4_table(
         data_tab, l_max=l_max, fit_type=fit_type, pos_in_rad=pos_in_rad,
         num_iter=num_iter, clip_limit=clip_limit)
 
     pmt2, err2, cor_mat2 = st_to_rotgldquad(
-        pmt[:16], err[:16], cor_mat[:16, :16])
+        pmt[:16], err[:16], cor_mat[:16, :16], fit_type=fit_type)
 
     return pmt2, err2, cor_mat2
 

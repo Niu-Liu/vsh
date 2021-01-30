@@ -14,7 +14,6 @@ import numpy as np
 # My progs
 from .matrix_calc import cor_to_cov, cov_to_cor
 
-
 # Scaling factors between S/T and rotation/glide/quadrupolar parameters
 FAC1 = np.sqrt(3. / 4 / np.pi)
 FAC2 = np.sqrt(3. / 8 / np.pi)
@@ -24,7 +23,7 @@ FAC5 = np.sqrt(5. / 16 / np.pi)
 
 
 # -----------------------------  MAIN -----------------------------
-def st_to_rotgld(pmt, err, cor_mat, fit_type='full'):
+def st_to_rotgld(pmt, err, cor_mat, fit_type="full"):
     """Transformation from degree 1 S&T-vector to rotation&glide vector
 
     pmt = (t10, s10, t11r, s11r, t11i, s11i)
@@ -51,9 +50,9 @@ def st_to_rotgld(pmt, err, cor_mat, fit_type='full'):
         correlation coefficient matrix
     """
 
-    if fit_type in ['full', 'FULL', 'Full']:
+    if fit_type in ["full", "FULL", "Full"]:
         len_vec = 6
-    elif fit_type in ['S', 'T', 's', 't']:
+    elif fit_type in ["S", "T", "s", "t"]:
         len_vec = 3
 
     if len(pmt) != len_vec or len(err) != len_vec:
@@ -67,7 +66,7 @@ def st_to_rotgld(pmt, err, cor_mat, fit_type='full'):
     #    R3 = FAC2 * T10
     # It should be same from (S10, S11r, S11i) to (G1, G2, G3)
 
-    if fit_type in ['full', 'FULL', 'Full']:
+    if fit_type in ["full", "FULL", "Full"]:
         TSF_MAT = np.array([[0, 0, 0, -FAC1, 0, 0],
                             [0, 0, 0, 0, 0, FAC1],
                             [0, FAC2, 0, 0, 0, 0],
@@ -75,7 +74,7 @@ def st_to_rotgld(pmt, err, cor_mat, fit_type='full'):
                             [0, 0, 0, 0, FAC1, 0],
                             [FAC2, 0, 0, 0, 0, 0]])
 
-    elif fit_type in ['S', 's', 'T', 't']:
+    elif fit_type in ["S", "s", "T", "t"]:
         TSF_MAT = np.array([[0, -FAC1, 0],
                             [0, 0, FAC1],
                             [FAC2, 0, 0]])
@@ -92,7 +91,7 @@ def st_to_rotgld(pmt, err, cor_mat, fit_type='full'):
     return gr_vec, gr_err, gr_cor_mat
 
 
-def st_to_rotgldquad(pmt, err, cor_mat):
+def st_to_rotgldquad(pmt, err, cor_mat, fit_type="full"):
     """Transformation from degree 2 S/T-vectors to rotation/glide/quadrupolar vector
 
     pmt = (t10, s10, t11r, s11r, t11i, s11i,
@@ -103,12 +102,11 @@ def st_to_rotgldquad(pmt, err, cor_mat):
     grq_vec = (G1, G2, G3, R1, R2, R3,
                E22R, E22I, E21R, E21I, E20,
                M22R, M22I, M21R, M21I, M20)
-
     """
 
-    if fit_type in ['full', 'FULL', 'Full']:
+    if fit_type in ["full", "FULL", "Full"]:
         len_vec = 16
-    elif fit_type in ['S', 'T', 's', 't']:
+    elif fit_type in ["S", "T", "s", "t"]:
         len_vec = 8
 
     if len(pmt) != len_vec or len(err) != len_vec:

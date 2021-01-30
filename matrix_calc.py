@@ -26,8 +26,8 @@ from .vsh_expension import real_vec_sph_harm_proj, vec_sph_harm_proj
 
 # -----------------------------  FUNCTIONS -----------------------------
 def cov_to_cor(cov_mat):
-    '''Convert covariance matrix to sigma and correlation coefficient matrix
-    '''
+    """Convert covariance matrix to sigma and correlation coefficient matrix
+    """
 
     # Formal uncertainty
     sig = np.sqrt(cov_mat.diagonal())
@@ -42,8 +42,8 @@ def cov_to_cor(cov_mat):
 
 
 def cor_to_cov(sig, cor_mat):
-    '''Convert correlation coefficient matrix to sigma and covariance matrix
-    '''
+    """Convert correlation coefficient matrix to sigma and covariance matrix
+    """
 
     # Covariance
     cov_mat = np.array([cor_mat[i, j] * sig[i] * sig[j]
@@ -55,7 +55,7 @@ def cor_to_cov(sig, cor_mat):
 
 
 def cov_mat_calc(dra_err, ddc_err, ra_dc_cor=None):
-    '''Calculate the covariance matrix.
+    """Calculate the covariance matrix.
 
     Parameters
     ----------
@@ -68,7 +68,7 @@ def cov_mat_calc(dra_err, ddc_err, ra_dc_cor=None):
     ----------
     cov_mat : matrix
         Covariance matrix used in the least squares fitting.
-    '''
+    """
 
     if len(ddc_err) != len(dra_err):
         print('The length of dra_err and ddc_err should be equal')
@@ -117,8 +117,8 @@ def wgt_mat_calc(dra_err, ddc_err, ra_dc_cor=None):
     return wgt_mat
 
 
-def jac_mat_l_calc(T_ra_mat, T_dc_mat, l, fit_type='full'):
-    '''Calculate the Jacobian matrix of lth degree
+def jac_mat_l_calc(T_ra_mat, T_dc_mat, l, fit_type="full"):
+    """Calculate the Jacobian matrix of lth degree
 
     Parameters
     ----------
@@ -129,7 +129,7 @@ def jac_mat_l_calc(T_ra_mat, T_dc_mat, l, fit_type='full'):
     fit_type : string
         flag to determine which parameters to be fitted
         'full' for T- and S-vectors bot Number of observations
-    '''
+    """
 
     # Number of source
     M = T_ra_mat.shape[2]
@@ -137,7 +137,7 @@ def jac_mat_l_calc(T_ra_mat, T_dc_mat, l, fit_type='full'):
     # Usually begins with the first order
     Tl0_ra, Tl0_dc = real_vec_sph_harm_proj(l, 0, T_ra_mat, T_dc_mat)
 
-    if fit_type in ['full', 'FULL', 'Full']:
+    if fit_type in ["full", "FULL", "Full"]:
         # Note the relation between Tlm and Slm
         #    S10_ra, S10_dc = -Tl0_dc, Tl0_ra
         #    jac_mat_ra = concatenate(
@@ -146,12 +146,12 @@ def jac_mat_l_calc(T_ra_mat, T_dc_mat, l, fit_type='full'):
             (Tl0_ra.reshape(M, 1), -Tl0_dc.reshape(M, 1)), axis=1)
         jac_mat_dc = concatenate(
             (Tl0_dc.reshape(M, 1), Tl0_ra.reshape(M, 1)), axis=1)
-    elif fit_type in ['T', 't']:
-        jac_mat_ra, jac_mat_dc = Tl0_ra, Tl0_dc
-    elif fit_type in ['S', 's']:
-        jac_mat_ra, jac_mat_dc = -Tl0_dc, Tl0_ra
+    elif fit_type in ["T", "t"]:
+        jac_mat_ra, jac_mat_dc = Tl0_ra.reshape(M, 1), Tl0_dc.reshape(M, 1)
+    elif fit_type in ["S", "s"]:
+        jac_mat_ra, jac_mat_dc = -Tl0_dc.reshape(M, 1), Tl0_ra.reshape(M, 1)
     else:
-        print('Unknown value for fit_type')
+        print("Unknown value for fit_type")
         exit(1)
 
     for m in range(1, l+1):
@@ -162,14 +162,14 @@ def jac_mat_l_calc(T_ra_mat, T_dc_mat, l, fit_type='full'):
        # Slmr_dc, Slmr_dc = Tlmr_ra, Tlmr_ra
 
         # Concatenate the new array and the existing Jacobian matrix
-        if fit_type in ['full', 'FULL', 'Full']:
+        if fit_type in ["full", "FULL", "Full"]:
             jac_mat_ra = concatenate(
                 (jac_mat_ra, Tlmr_ra.reshape(M, 1), -Tlmr_dc.reshape(M, 1),
                  Tlmi_ra.reshape(M, 1), -Tlmi_dc.reshape(M, 1)), axis=1)
             jac_mat_dc = concatenate(
                 (jac_mat_dc, Tlmr_dc.reshape(M, 1), Tlmr_ra.reshape(M, 1),
                  Tlmi_dc.reshape(M, 1), Tlmi_ra.reshape(M, 1)), axis=1)
-        elif fit_type in ['T', 't']:
+        elif fit_type in ["T", "t"]:
             jac_mat_ra = concatenate(
                 (jac_mat_ra, Tlmr_ra.reshape(M, 1), Tlmi_ra.reshape(M, 1)), axis=1)
             jac_mat_dc = concatenate(
@@ -185,22 +185,22 @@ def jac_mat_l_calc(T_ra_mat, T_dc_mat, l, fit_type='full'):
     jac_mat = concatenate((jac_mat_ra, jac_mat_dc), axis=0)
 
     # Check the shape of the matrix
-    if fit_type in ['full', 'FULL', 'Full']:
+    if fit_type in ["full", "FULL", "Full"]:
         n1, n2 = 2*M, 4*l+2
     else:
         n1, n2 = 2*M, 2*l+1
 
     if jac_mat.shape != (n1, n2):
-        print('Shape of Jocabian matrix at l={} is ({},{}) '
-              'rather than ({},{})'.format(
+        print("Shape of Jocabian matrix at l={} is ({},{}) "
+              "rather than ({},{})".format(
                   l, jac_mat.shape[0], jac_mat.shape[1], n1, n2))
         sys.exit(1)
 
     return jac_mat
 
 
-def jac_mat_calc(ra_rad, dc_rad, l_max, fit_type='full'):
-    '''Calculate the Jacobian matrix
+def jac_mat_calc(ra_rad, dc_rad, l_max, fit_type="full"):
+    """Calculate the Jacobian matrix
 
     Parameters
     ----------
@@ -218,10 +218,7 @@ def jac_mat_calc(ra_rad, dc_rad, l_max, fit_type='full'):
     ----------
     jac_mat : array of float
         Jacobian matrix  (M, N) (assume N unknows to determine)
-    '''
-
-    # Calculate all the VSH terms at one time
-    T_ra_mat, T_dc_mat = vec_sph_harm_proj(l_max, ra_rad, dc_rad)
+    """
 
     # Calculate all the VSH terms at one time
     T_ra_mat, T_dc_mat = vec_sph_harm_proj(l_max, ra_rad, dc_rad)
@@ -236,14 +233,14 @@ def jac_mat_calc(ra_rad, dc_rad, l_max, fit_type='full'):
     # Check the shape of the Jacobian matrix
     M = len(ra_rad)
     # N = 2 * l_max * (l_max+2)
-    if fit_type in ['full', 'FULL', 'Full']:
-        n1, n2 = 2*M, 2 * l_max * (l_max+2)
+    if fit_type in ["full", "FULL", "Full"]:
+        n1, n2 = 2 * M, 2 * l_max * (l_max+2)
     else:
-        n1, n2 = 2*M, l_max * (l_max+2)
+        n1, n2 = 2 * M, l_max * (l_max+2)
 
     if jac_mat.shape != (n1, n2):
-        print('Shape of Jocabian matrix at l={} is ({},{}) '
-              'rather than ({},{})'.format(
+        print("Shape of Jocabian matrix at l={} is ({},{}) "
+              "rather than ({},{})".format(
                   l, jac_mat.shape[0], jac_mat.shape[1], n1, n2))
         sys.exit(1)
 
@@ -251,9 +248,9 @@ def jac_mat_calc(ra_rad, dc_rad, l_max, fit_type='full'):
 
 
 def nor_mat_calc(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
-                 ra_dc_cor=None, l_max=1, fit_type='full',
-                 save_mat=False, suffix=''):
-    '''Cacluate the normal and right-hand-side matrix for LSQ analysis.
+                 ra_dc_cor=None, l_max=1, fit_type="full",
+                 save_mat=False, suffix=""):
+    """Cacluate the normal and right-hand-side matrix for LSQ analysis.
 
     Parameters
     ----------
@@ -281,7 +278,7 @@ def nor_mat_calc(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
         normal matrix
     rhs_mat : array of float
         right-hand-side matrix
-    '''
+    """
 
     # Jacobian matrix
     jac_mat = jac_mat_calc(ra_rad, dc_rad, l_max, fit_type)
@@ -424,8 +421,8 @@ def residual_calc(dra, ddc, ra_rad, dc_rad, pmt, l_max, fit_type='full',
 
 
 def nor_eq_sol(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cor=None,
-               l_max=1, fit_type='full', num_iter=None, calc_res=True):
-    '''The 1st degree of VSH function: glide and rotation.
+               l_max=1, fit_type="full", num_iter=None, calc_res=True):
+    """The 1st degree of VSH function: glide and rotation.
 
     Parameters
     ----------
@@ -451,7 +448,7 @@ def nor_eq_sol(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cor=None,
         uncertainty of x
     cor_mat : matrix
         matrix of correlation coefficient.
-    '''
+    """
 
     # Maxium number of sources processed per time
     # According to my test, 100 should be a good choice
@@ -460,7 +457,6 @@ def nor_eq_sol(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cor=None,
 
     div = dra.size // num_iter
     rem = dra.size % num_iter
-    A, b = 0, 0
 
     if rem:
         if not ra_dc_cor is None:
@@ -470,6 +466,9 @@ def nor_eq_sol(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cor=None,
         else:
             A, b = nor_mat_calc(dra[: rem], ddc[: rem], dra_err[: rem], ddc_err[: rem],
                                 ra_rad[: rem], dc_rad[: rem], l_max=l_max, fit_type=fit_type)
+
+    else:
+        A, b = 0, 0
 
     for i in range(div):
         sta = rem + i * num_iter
@@ -491,6 +490,7 @@ def nor_eq_sol(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cor=None,
 
     # Covariance.
     cov_mat = np.linalg.inv(A)
+
     # Formal uncertainty and correlation coefficient
     sig, cor_mat = cov_to_cor(cov_mat)
 
@@ -506,8 +506,8 @@ def nor_eq_sol(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cor=None,
 
 
 def nor_mat_calc_for_cache(dra_err, ddc_err, ra_rad, dc_rad,
-                           ra_dc_cor=None, l_max=1, fit_type='full', suffix=''):
-    '''Cacluate the normal and right-hand-side matrix for LSQ analysis.
+                           ra_dc_cor=None, l_max=1, fit_type="full", suffix=""):
+    """Cacluate the normal and right-hand-side matrix for LSQ analysis.
 
     Parameters
     ----------
@@ -535,7 +535,7 @@ def nor_mat_calc_for_cache(dra_err, ddc_err, ra_rad, dc_rad,
         normal matrix
     rhs_mat : array of float
         right-hand-side matrix
-    '''
+    """
 
     # Jacobian matrix
     jac_mat = jac_mat_calc(ra_rad, dc_rad, l_max, fit_type)
@@ -550,15 +550,15 @@ def nor_mat_calc_for_cache(dra_err, ddc_err, ra_rad, dc_rad,
     nor_mat = np.dot(mul_mat, jac_mat)
 
     # Save matrice for later use
-    np.save('/tmp/jac_mat_{:s}.npy'.format(suffix), jac_mat)
-    # np.save('/tmp/wgt_mat_{:s}.npy'.format(suffix), wgt_mat)
-    np.save('/tmp/mul_mat_{:s}.npy'.format(suffix), mul_mat)
-    np.save('/tmp/nor_mat_{:s}.npy'.format(suffix), nor_mat)
+    np.save("/tmp/jac_mat_{:s}.npy".format(suffix), jac_mat)
+    # np.save("/tmp/wgt_mat_{:s}.npy".format(suffix), wgt_mat)
+    np.save("/tmp/mul_mat_{:s}.npy".format(suffix), mul_mat)
+    np.save("/tmp/nor_mat_{:s}.npy".format(suffix), nor_mat)
 
 
 def cache_mat_calc(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cor=None,
-                   l_max=1, fit_type='full', num_iter=None):
-    '''Calculate cache matrix for future use
+                   l_max=1, fit_type="full", num_iter=None):
+    """Calculate cache matrix for future use
 
     Parameters
     ----------
@@ -584,7 +584,7 @@ def cache_mat_calc(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cor=None,
         uncertainty of x
     cor_mat : matrix
         matrix of correlation coefficient.
-    '''
+    """
 
     # Maxium number of sources processed per time
     # According to my test, 100 should be a good choice
@@ -596,7 +596,7 @@ def cache_mat_calc(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cor=None,
     suffix_array = []
 
     if rem:
-        suffix_array.append('{:05d}'.format(0))
+        suffix_array.append("{:05d}".format(0))
         if not ra_dc_cor is None:
             nor_mat_calc_for_cache(dra_err[: rem], ddc_err[: rem],
                                    ra_rad[: rem], dc_rad[: rem],
@@ -612,7 +612,7 @@ def cache_mat_calc(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cor=None,
     for i in range(div):
         sta = rem + i * num_iter
         end = sta + num_iter
-        suffix_array.append('{:05d}'.format(i+1))
+        suffix_array.append("{:05d}".format(i+1))
 
         if not ra_dc_cor is None:
             nor_mat_calc_for_cache(dra_err[sta: end], ddc_err[sta: end],
@@ -630,7 +630,7 @@ def cache_mat_calc(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cor=None,
 
 
 def nor_mat_calc_from_cahce(dra, ddc, suffix):
-    '''Cacluate t he normal and right-hand-side matrix for LSQ analysis.
+    """Cacluate t he normal and right-hand-side matrix for LSQ analysis.
 
     Parameters
     ----------
@@ -645,13 +645,13 @@ def nor_mat_calc_from_cahce(dra, ddc, suffix):
         normal matrix
     rhs_mat : array of float
         right-hand-side matrix
-    '''
+    """
 
     # Jac_mat_T * Wgt_mat
-    mul_mat = np.load('/tmp/mul_mat_{:s}.npy'.format(suffix))
+    mul_mat = np.load("/tmp/mul_mat_{:s}.npy".format(suffix))
 
     # Calculate normal matrix A
-    nor_mat = np.load('/tmp/nor_mat_{:s}.npy'.format(suffix))
+    nor_mat = np.load("/tmp/nor_mat_{:s}.npy".format(suffix))
 
     # Calculate right-hand-side matrix b
     res_mat = concatenate((dra, ddc), axis=0)
@@ -661,7 +661,7 @@ def nor_mat_calc_from_cahce(dra, ddc, suffix):
 
 
 def predict_mat_calc_from_cache(pmt, suffix):
-    '''Calculate the predicted value from cached Jacobian matrix
+    """Calculate the predicted value from cached Jacobian matrix
 
     Parameters
     ----------
@@ -676,9 +676,9 @@ def predict_mat_calc_from_cache(pmt, suffix):
         predicted offset in RA
     ddc_pre : array
         predicted offset in Declination
-    '''
+    """
 
-    jac_mat = np.load('/tmp/jac_mat_{:s}.npy'.format(suffix))
+    jac_mat = np.load("/tmp/jac_mat_{:s}.npy".format(suffix))
     dra_ddc = np.dot(jac_mat, pmt)
     num_sou = int(len(dra_ddc)/2)
     dra_pre, ddc_pre = dra_ddc[:num_sou], dra_ddc[num_sou:]
@@ -687,7 +687,7 @@ def predict_mat_calc_from_cache(pmt, suffix):
 
 
 def residual_calc_from_cache(dra, ddc, pmt, suffix_array):
-    '''Calculate post-fit residual
+    """Calculate post-fit residual
 
     Parameters
     ----------
@@ -704,7 +704,7 @@ def residual_calc_from_cache(dra, ddc, pmt, suffix_array):
         residual in RA
     ddc_r : array
         residual in Declination
-    '''
+    """
 
     # Calculate predict value
     dra_pre = np.array([], dtype=float)
@@ -721,7 +721,7 @@ def residual_calc_from_cache(dra, ddc, pmt, suffix_array):
 
 
 def nor_eq_sol_from_cache(dra, ddc, suffix_array, num_iter=None, calc_res=True):
-    '''Calculate cache matrix for future use
+    """Calculate cache matrix for future use
 
     Parameters
     ----------
@@ -736,7 +736,7 @@ def nor_eq_sol_from_cache(dra, ddc, suffix_array, num_iter=None, calc_res=True):
         uncertainty of x
     cor_mat : matrix
         matrix of correlation coefficient.
-    '''
+    """
 
     # Maxium number of sources processed per time
     # According to my test, 100 should be a good choice
@@ -746,13 +746,14 @@ def nor_eq_sol_from_cache(dra, ddc, suffix_array, num_iter=None, calc_res=True):
     div = dra.size // num_iter
     rem = dra.size % num_iter
     suffix_array = []
-    A, b = 0, 0
     index = 0
 
     if rem:
         suffix = suffix_array[index]
         index += 1
         A, b = nor_mat_calc_from_cahce(dra[:rem], ddc[:rem], suffix)
+    else:
+        A, b = 0, 0
 
     for i in range(div):
         sta = rem + i * num_iter
@@ -781,17 +782,17 @@ def nor_eq_sol_from_cache(dra, ddc, suffix_array, num_iter=None, calc_res=True):
 
 
 def rm_cache_mat(suffix_array):
-    '''Remove cache
+    """Remove cache
 
-    '''
+    """
 
     for suffix in suffix_array:
         # Delete Jacobian matrix file
-        os.system('rm /tmp/jac_mat_{:s}.npy'.format(suffix))
+        os.system("rm /tmp/jac_mat_{:s}.npy".format(suffix))
 
         # Delete multiplication matrix file
-        os.system('rm /tmp/mul_mat_{:s}.npy'.format(suffix))
+        os.system("rm /tmp/mul_mat_{:s}.npy".format(suffix))
 
         # Delete normal matrix file
-        os.system('rm /tmp/nor_mat_{:s}.npy'.format(suffix))
+        os.system("rm /tmp/nor_mat_{:s}.npy".format(suffix))
 # --------------------------------- END --------------------------------

@@ -14,7 +14,7 @@ test sample of this amount is generated.
 import numpy as np
 from astropy.table import Table
 # My modules
-from rgq_func import vsh_func
+from .rgq_func import vsh_func
 
 
 # -----------------------------  MAIN -----------------------------
@@ -28,11 +28,11 @@ def generate_test_sample(sample_size, pmt_vec):
     dec = (np.random.random_sample(sample_size) - 0.5) * np.pi
 
     # Positional difference from ideal cases
-    dra_calc, ddec_calc = vsh_func(ra, dec, pmt_vec)
+    dra_calc, ddec_calc = vsh_func(ra, dec, pmt_vec, l_max=1)
 
     # Noise
-    dra_nois = np.random.normal(scale=1, size=sample_size) * 0
-    ddec_nois = np.random.normal(scale=1, size=sample_size) * 0
+    dra_nois = 0  # np.random.normal(scale=1, size=sample_size) * 0
+    ddec_nois = 0  # np.random.normal(scale=1, size=sample_size) * 0
 
     # Simulation data
     dra_sim, ddec_sim = dra_calc + dra_nois, ddec_calc + ddec_nois
