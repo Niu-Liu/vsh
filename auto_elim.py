@@ -188,6 +188,77 @@ def auto_elim_vsh_fit(clip_limit, dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
     return pmt, sig, cor_mat, dra_r, ddc_r
 
 
+def std_elim_vsh_fit(x_limit, dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
+                     ra_dc_cor=None, l_max=1, fit_type="full", num_iter=100):
+    """Fit the VSH parameters with standard-elimination
+
+    Parameters
+    ----------
+    x_limit: float
+        thershold on normalized separation for std-elimination
+    dra/ddc: array of float
+        R.A.(*cos(Dec.))/Dec. differences
+    dra_err/ddc_err: array of float
+        formal uncertainty of dra(*cos(dc_rad))/ddc
+    ra_rad/dc_rad: array of float
+        Right ascension/Declination in radian
+    ra_dc_cor: array of float
+        correlation coefficient between dra and ddc, default is None
+    l_max: int
+        maximum degree
+    fit_type: string
+        flag to determine which parameters to be fitted
+        full for T - and S-vectors both
+        T for T-vectors only
+        S for S-vectors only
+    pos_in_rad: Boolean
+        tell if positions are given in radian, mostly False
+    num_iter: int
+        number of source once processed. 100 should be fine
+
+    Returns
+    ----------
+    pmt: array of float
+        estimation of(d1, d2, d3, r1, r2, r3)
+    sig: array of float
+        uncertainty of x
+    cor_mat: matrix
+        matrix of correlation coefficient.
+    """
+
+    # Generate cache matrix
+    suffix_array = cache_mat_calc(
+        dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
+        ra_dc_cor=ra_dc_cor, l_max=l_max, fit_type=fit_type, num_iter=num_iter)
+
+    # Calculate normalized separation
+    nor_sep = calc_nor_sep(dra, dra_err, ddc, ddc_err, ra_dc_cor)
+    mask = (nor_sep <= x_limit)
+
+    # Generate a clean sample
+    [dra1, ddc1, dra_err1, ddc_err1, ra_rad1, dc_rad1, ra_dc_cor1] = extract_data(
+        mask, dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cor)
+
+    print("==================== Standard-elimination ====================")
+    print("    Nb_sources    Nb_outliers    Threshold")
+    print("    {:9d}    {:9d}    {:9.3f}".format(
+        len(dra1), len(dra)-len(dra1), x_limit))
+
+    pmt, sig, cor_mat = nor_eq_sol(
+        dra1, ddc1, dra_err1, ddc_err1, ra_rad1, dc_rad1,
+        ra_dc_cor=ra_dc_cor1, l_max=l_max, fit_type=fit_type,
+        num_iter=num_iter, calc_res=False)
+
+    # Calculate residuals for all sources
+    dra_r, ddc_r = residual_calc_from_cache(
+        dra, ddc, pmt, suffix_array)
+
+    # Remove cache file
+    rm_cache_mat(suffix_array)
+
+    return pmt, sig, cor_mat, dra_r, ddc_r
+
+
 def main():
     """Maybe add some tests here
     """

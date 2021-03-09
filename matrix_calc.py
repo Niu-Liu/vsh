@@ -306,8 +306,8 @@ def nor_mat_calc(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
     return nor_mat, rhs_mat
 
 
-def predict_mat_calc(pmt, ra, dc, l_max, fit_type='full'):
-    '''Calculate the predicted value
+def predict_mat_calc(pmt, ra, dc, l_max, fit_type="full"):
+    """Calculate the predicted value
 
     Parameters
     ----------
@@ -324,7 +324,7 @@ def predict_mat_calc(pmt, ra, dc, l_max, fit_type='full'):
         predicted offset in RA
     ddc_pre : array
         predicted offset in Declination
-    '''
+    """
 
     jac_mat = jac_mat_calc(ra, dc, l_max, fit_type)
     dra_ddc = np.dot(jac_mat, pmt)
@@ -334,8 +334,8 @@ def predict_mat_calc(pmt, ra, dc, l_max, fit_type='full'):
     return dra_pre, ddc_pre
 
 
-def predict_mat_calc_4_huge(pmt, ra_rad, dc_rad, l_max, fit_type='full', num_iter=None):
-    '''Calculate the predicted value
+def predict_mat_calc_4_huge(pmt, ra_rad, dc_rad, l_max, fit_type="full", num_iter=None):
+    """Calculate the predicted value
 
     Parameters
     ----------
@@ -352,7 +352,7 @@ def predict_mat_calc_4_huge(pmt, ra_rad, dc_rad, l_max, fit_type='full', num_ite
         predicted offset in RA
     ddc_pre : array
         predicted offset in Declination
-    '''
+    """
 
     if num_iter is None:
         num_iter = 100
@@ -383,9 +383,9 @@ def predict_mat_calc_4_huge(pmt, ra_rad, dc_rad, l_max, fit_type='full', num_ite
     return dra_pre, ddc_pre
 
 
-def residual_calc(dra, ddc, ra_rad, dc_rad, pmt, l_max, fit_type='full',
+def residual_calc(dra, ddc, ra_rad, dc_rad, pmt, l_max, fit_type="full",
                   num_iter=None):
-    '''Calculate post-fit residual
+    """Calculate post-fit residual
 
     Parameters
     ----------
@@ -409,7 +409,7 @@ def residual_calc(dra, ddc, ra_rad, dc_rad, pmt, l_max, fit_type='full',
         residual in RA
     ddc_r : array
         residual in Declination
-    '''
+    """
 
     dra_pre, ddc_pre = predict_mat_calc_4_huge(
         pmt, ra_rad, dc_rad, l_max, fit_type, num_iter)

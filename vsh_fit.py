@@ -14,14 +14,14 @@ from .matrix_calc import nor_eq_sol, residual_calc
 from .vsh_significance import check_vsh_sig
 from .vsh_aux_info import prefit_check, prefit_info
 from .vsh_stats import print_stats_info, residual_stats_calc
-from .auto_elim import auto_elim_vsh_fit
+from .auto_elim import auto_elim_vsh_fit, std_elim_vsh_fit
 from .pmt_convert import convert_ts_to_rotgli, st_to_rotgld, st_to_rotgldquad
 
 
 # -----------------------------  MAIN -----------------------------
 def vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=None,
             l_max=1, fit_type="full", pos_in_rad=False,
-            num_iter=100, clip_limit=None):
+            num_iter=100, **kwargs):
     """VSH fitted to an offset field
 
     Parameters
@@ -85,26 +85,54 @@ def vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=None,
     prefit_info(num_sou, num_pmt, num_dof, l_max)
 
     # Step 2: Fitting
-    if clip_limit is None:
+    # Remove outliers
+    if "std_clean" in kwargs.keys() and kwargs["std_clean"]:
+        print("An upper limit will be put on the normalized separation X.")
+
+        if "x_limit" not in kwargs.keys():
+            print("Since no value is given, the default value (sqrt(2*ln(#sou))) "
+                  "predicted from a standard Rayleigh distribution is used.")
+            x_limit = np.sqrt(2 * np.log(num_sou))
+
+        elif isinstance(kwargs["x_limit"], (int, float)):
+            x_limit = kwargs["x_limit"]
+
+        else:
+            print("Parameter 'x_limit' must be a float-like value.")
+            sys.exit(1)
+
+        print("The LSQ fit is performed based a clean sample consisted of"
+              "all source with a normalized separation with X<={:.3f}.\n".format(x_limit))
+
+        # Fitting with elimination
+        pmt, sig, cor_mat, dra_r, ddc_r = std_elim_vsh_fit(
+            x_limit, dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
+            ra_dc_cor=ra_dc_cor, l_max=l_max, fit_type=fit_type, num_iter=num_iter)
+
+    elif "clip_limit" in kwargs.keys() and kwargs["clip_limit"]:
+        clip_limit = kwargs["clip_limit"]
+        # Use the algorithm in Lindegren et al. (2018)
+        if isinstance(clip_limit, (int, float)):
+            print("The fit will be iterated until it converges, that is, no more outliers, "
+                  "\nbased on a clean sample of "
+                  "a normalized separation X<={:.3f}*median(X).\n".format(clip_limit))
+
+            # Fitting with auto-elimination
+            pmt, sig, cor_mat, dra_r, ddc_r = auto_elim_vsh_fit(
+                clip_limit, dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
+                ra_dc_cor=ra_dc_cor, l_max=l_max, fit_type=fit_type, num_iter=num_iter)
+
+        else:
+            print("Parameter 'clip_limit' must be a float-like value.")
+            sys.exit(1)
+
+    else:
+        # No outlier elimination
         print("No constraints put on the data, so the fitting will be done only once.")
         # Do the fitting
         pmt, sig, cor_mat, dra_r, ddc_r = nor_eq_sol(
             dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cor=ra_dc_cor,
             l_max=l_max, fit_type=fit_type, num_iter=num_iter)
-
-    elif isinstance(clip_limit, (int, float)):
-        print("The fit will be iterated until it converges, that is, no more outliers, "
-              "\nbased on a clean sample of "
-              "a normalized separation X<={:.3f}*median(X).\n".format(clip_limit))
-
-        # Fitting with auto-elimination
-        pmt, sig, cor_mat, dra_r, ddc_r = auto_elim_vsh_fit(
-            clip_limit, dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
-            ra_dc_cor=ra_dc_cor, l_max=l_max, fit_type=fit_type, num_iter=num_iter)
-
-    else:
-        print("Parameter 'clip_limit' must be a float-like value.")
-
     # Step 3: Calculate statistics of data
     # for pre-fit data
     apr_stats = residual_stats_calc(
@@ -127,11 +155,24 @@ def vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=None,
     # First degrees -> rotation/glide
     convert_ts_to_rotgli(pmt, sig, cor_mat)
 
-    return pmt, sig, cor_mat
+    # Return results
+    output = {}
+    output["note"] = [
+        "pmt: fitted VSH parameters\n"
+        "sig: formal uncertainties\n"
+        "cor: correlation coefficient matirx\n"
+        "residual: post-fit residual of (dra, ddec)\n"][0]
+
+    output["pmt"] = pmt
+    output["sig"] = sig
+    output["cor"] = cor_mat
+    output["residual"] = [dra_r, ddc_r]
+
+    return output
 
 
 def vsh_fit_4_table(data_tab, l_max=1, fit_type="full", pos_in_rad=False,
-                    num_iter=100, clip_limit=None):
+                    num_iter=100, **kwargs):
     """VSH fit for Atstropy.Table
 
     Parameters
@@ -216,17 +257,17 @@ def vsh_fit_4_table(data_tab, l_max=1, fit_type="full", pos_in_rad=False,
         dra_ddc_cor = None
 
     # Do the LSQ fitting
-    pmt, err, cor_mat = vsh_fit(dra, ddec, dra_err, ddec_err, ra, dec,
-                                ra_dc_cor=dra_ddc_cor, l_max=l_max,
-                                pos_in_rad=pos_in_rad, num_iter=num_iter,
-                                clip_limit=clip_limit, fit_type=fit_type)
+    output = vsh_fit(dra, ddec, dra_err, ddec_err, ra, dec,
+                     ra_dc_cor=dra_ddc_cor, l_max=l_max,
+                     pos_in_rad=pos_in_rad, num_iter=num_iter,
+                     fit_type=fit_type, **kwargs)
 
-    return pmt, err, cor_mat
+    return output
 
 
 def rotgli_fit(dra, ddc, dra_err, ddc_err, ra, dc,
                ra_dc_cor=None, l_max=1, fit_type="full",
-               pos_in_rad=False, num_iter=100, clip_limit=None):
+               pos_in_rad=False, num_iter=100, **kwargs):
     """VSH degree 01 fit and return rotation &glide
 
     Parameters
@@ -262,19 +303,31 @@ def rotgli_fit(dra, ddc, dra_err, ddc_err, ra, dc,
     """
 
     # VSH fit
-    pmt, err, cor_mat = vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc,
-                                ra_dc_cor=ra_dc_cor, l_max=l_max,
-                                fit_type=fit_type, pos_in_rad=pos_in_rad,
-                                num_iter=num_iter, clip_limit=clip_limit)
+    output = vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc,
+                     ra_dc_cor=ra_dc_cor, l_max=l_max,
+                     fit_type=fit_type, pos_in_rad=pos_in_rad,
+                     num_iter=num_iter, **kwargs)
 
-    pmt1, err1, cor_mat1 = st_to_rotgld(pmt[:6], err[:6], cor_mat[:6, :6])
+    pmt = output["pmt"]
+    sig = output["sig"]
+    cor_mat = output["cor"]
 
-    return pmt1, err1, cor_mat1
+    pmt1, sig1, cor_mat1 = st_to_rotgld(pmt[:6], sig[:6], cor_mat[:6, :6])
+    output["pmt1"] = pmt1
+    output["sig1"] = sig1
+    output["cor1"] = cor_mat1
+
+    output["note"] = output["note"] + [
+        "pmt1: glide+rotation\n"
+        "sig1: formal error of glide/rotation\n"
+        "cor1: correlation coeficient matrix of glide/rotation\n"][0]
+
+    return output
 
 
 def rotgliquad_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=None,
                    l_max=2, fit_type="full", pos_in_rad=False,
-                   num_iter=100, clip_limit=None):
+                   num_iter=100, **kwargs):
     """VSH degree 02 fit and return rotation, glide, &quadrupolar vectors
 
     Parameters
@@ -315,19 +368,32 @@ def rotgliquad_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=None,
         sys.exit(1)
 
     # VSH fit
-    pmt, err, cor_mat = vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc,
-                                ra_dc_cor=ra_dc_cor, l_max=l_max,
-                                fit_type=fit_type, pos_in_rad=pos_in_rad,
-                                num_iter=num_iter, clip_limit=clip_limit)
+    output = vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc,
+                     ra_dc_cor=ra_dc_cor, l_max=l_max,
+                     fit_type=fit_type, pos_in_rad=pos_in_rad,
+                     num_iter=num_iter, **kwargs)
 
-    pmt2, err2, cor_mat2 = st_to_rotgldquad(
-        pmt[:16], err[:16], cor_mat[:16, :16])
+    pmt = output["pmt"]
+    sig = output["sig"]
+    cor_mat = output["cor"]
 
-    return pmt2, err2, cor_mat2
+    pmt2, sig2, cor_mat2 = st_to_rotgldquad(
+        pmt[:16], sig[:16], cor_mat[:16, :16])
+
+    output["pmt2"] = pmt2
+    output["sig2"] = sig2
+    output["cor2"] = cor_mat2
+
+    output["note"] = output["note"] + [
+        "pmt2: glide+rotation+quadrupolar\n"
+        "sig2: formal error of glide/rotation/quadrupolar\n"
+        "cor2: correlation coeficient matrix of glide/rotation/quad\n"][0]
+
+    return output
 
 
 def rotgli_fit_4_table(data_tab, l_max=1, fit_type="full", pos_in_rad=False,
-                       num_iter=100, clip_limit=None):
+                       num_iter=100, **kwargs):
     """VSH degree 01 fit and return rotation &glide vectors for Atstropy.Table
 
     Parameters
@@ -358,17 +424,29 @@ def rotgli_fit_4_table(data_tab, l_max=1, fit_type="full", pos_in_rad=False,
     """
 
     # VSH fit
-    pmt, err, cor_mat = vsh_fit_4_table(
+    output = vsh_fit_4_table(
         data_tab, l_max=l_max, fit_type=fit_type, pos_in_rad=pos_in_rad,
-        num_iter=num_iter, clip_limit=clip_limit)
+        num_iter=num_iter, **kwargs)
 
-    pmt1, err1, cor_mat1 = st_to_rotgld(pmt[:6], err[:6], cor_mat[:6, :6])
+    pmt = output["pmt"]
+    sig = output["sig"]
+    cor_mat = output["cor"]
 
-    return pmt1, err1, cor_mat1
+    pmt1, sig1, cor_mat1 = st_to_rotgld(pmt[:6], sig[:6], cor_mat[:6, :6])
+    output["pmt1"] = pmt1
+    output["sig1"] = sig1
+    output["cor1"] = cor_mat1
+
+    output["note"] = output["note"] + [
+        "pmt1: glide+rotation\n"
+        "sig1: formal error of glide/rotation\n"
+        "cor1: correlation coeficient matrix of glide/rotation\n"][0]
+
+    return output
 
 
 def rotgliquad_fit_4_table(data_tab, l_max=2, fit_type="full", pos_in_rad=False,
-                           num_iter=100, clip_limit=None):
+                           num_iter=100, **kwargs):
     """VSH degree 02 fit and return rotation, glide, &quadrupolar vectors for Atstropy.Table
 
     Parameters
@@ -409,14 +487,27 @@ def rotgliquad_fit_4_table(data_tab, l_max=2, fit_type="full", pos_in_rad=False,
         sys.exit(1)
 
     # VSH fit
-    pmt, err, cor_mat = vsh_fit_4_table(
+    output = vsh_fit_4_table(
         data_tab, l_max=l_max, fit_type=fit_type, pos_in_rad=pos_in_rad,
-        num_iter=num_iter, clip_limit=clip_limit)
+        num_iter=num_iter, **kwargs)
 
-    pmt2, err2, cor_mat2 = st_to_rotgldquad(
-        pmt[:16], err[:16], cor_mat[:16, :16], fit_type=fit_type)
+    pmt = output["pmt"]
+    sig = output["sig"]
+    cor_mat = output["cor"]
 
-    return pmt2, err2, cor_mat2
+    pmt2, sig2, cor_mat2 = st_to_rotgldquad(
+        pmt[:16], sig[:16], cor_mat[:16, :16])
+
+    output["pmt2"] = pmt2
+    output["sig2"] = sig2
+    output["cor2"] = cor_mat2
+
+    output["note"] = output["note"] + [
+        "pmt2: glide+rotation+quadrupolar\n"
+        "sig2: formal error of glide/rotation/quadrupolar\n"
+        "cor2: correlation coeficient matrix of glide/rotation/quad\n"][0]
+
+    return output
 
 
 def main():
