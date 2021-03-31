@@ -29,7 +29,7 @@ def vsh_func01(ra, dec, g1, g2, g3, r1, r2, r3):
     Returns
     ----------
     dra/ddec : array of float
-        R.A.(*cos(Dec.))/Dec. differences in uas
+        R.A.(*cos(Dec.))/Dec. differences in dex
     """
 
     dra = [-r1 * cos(ra) * sin(dec) - r2 * sin(ra) * sin(dec)
@@ -60,7 +60,7 @@ def vsh_func02(ra, dec,
     Returns
     ----------
     dra/ddec : array of float
-        R.A.(*cos(Dec.))/Dec. differences in uas
+        R.A.(*cos(Dec.))/Dec. differences in dex
     """
 
     dra = [+M_20 * sin(2 * dec)
@@ -92,7 +92,7 @@ def vsh_func(ra, dec, pmt, l_max=2):
     Returns
     ----------
     dra/ddec : array of float
-        R.A.(*cos(Dec.))/Dec. differences in uas
+        R.A.(*cos(Dec.))/Dec. differences in dex
     """
 
     if l_max == 1:

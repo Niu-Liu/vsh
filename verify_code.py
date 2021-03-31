@@ -25,7 +25,7 @@ pmt_vec = np.concatenate((gli_vec, rot_vec, qua_vec))
 test_tab = generate_test_sample(int(2e2), pmt_vec)
 
 
-# Transform astropy.Column into np.array and mas -> uas
+# Transform astropy.Column into np.array and mas -> dex
 dra = np.array(test_tab["dra"])
 ddec = np.array(test_tab["ddec"])
 ra = np.array(test_tab["ra"])
@@ -35,8 +35,8 @@ ddec_err = np.array(test_tab["ddec_err"])
 dra_ddc_cor = np.array(test_tab["dra_ddec_cor"])
 
 print("# num_iter"
-      "               Glide [uas]             "
-      "               Rotation [uas]    Time_taken [s]")
+      "               Glide [dex]             "
+      "               Rotation [dex]    Time_taken [s]")
 print("#        "
       "     G1            G2            G3        "
       "     R1            R2            R3        ")

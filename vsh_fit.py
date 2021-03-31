@@ -15,7 +15,8 @@ from .vsh_significance import check_vsh_sig
 from .vsh_aux_info import prefit_check, prefit_info
 from .vsh_stats import print_stats_info, residual_stats_calc
 from .auto_elim import auto_elim_vsh_fit, std_elim_vsh_fit
-from .pmt_convert import convert_ts_to_rotgli, st_to_rotgld, st_to_rotgldquad
+from .pmt_convert import convert_ts_to_rgq, add_rgq_to_output
+from .bootstrap_sample import bootstrap_resample_4_err
 
 
 # -----------------------------  MAIN -----------------------------
@@ -27,13 +28,13 @@ def vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=None,
     Parameters
     ----------
     dra/ddc : array of float
-        R.A.(*cos(Dec.))/Dec. differences in uas
+        R.A.(*cos(Dec.))/Dec. differences in dex
     dra_err/ddc_err : array of float
-        formal uncertainty of dra(*cos(dc_rad))/ddc in uas
+        formal uncertainty of dra(*cos(dc_rad))/ddc in dex
     ra_rad/dc_rad : array of float
         Right ascension/Declination in radian
-    ra_dc_cov/ra_dc_cor : array of float
-        covariance/correlation coefficient between dra and ddc in uas^2, default is None
+    ra_dc_cor : array of float
+        correlation coefficient between dra and ddc, default is None
     l_max : int
         maximum degree
     fit_type : string
@@ -51,9 +52,9 @@ def vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=None,
     Returns
     ----------
     pmt : array of float
-        estimation of (d1, d2, d3, r1, r2, r3) in uas
+        estimation of (d1, d2, d3, r1, r2, r3) in dex
     sig : array of float
-        uncertainty of x in uas
+        uncertainty of x in dex
     cor_mat : matrix
         matrix of correlation coefficient.
     """
@@ -105,12 +106,13 @@ def vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=None,
               "all source with a normalized separation with X<={:.3f}.\n".format(x_limit))
 
         # Fitting with elimination
-        pmt, sig, cor_mat, dra_r, ddc_r = std_elim_vsh_fit(
+        pmt, sig, cor_mat, dra_r, ddc_r, mask = std_elim_vsh_fit(
             x_limit, dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
             ra_dc_cor=ra_dc_cor, l_max=l_max, fit_type=fit_type, num_iter=num_iter)
 
     elif "clip_limit" in kwargs.keys() and kwargs["clip_limit"]:
         clip_limit = kwargs["clip_limit"]
+
         # Use the algorithm in Lindegren et al. (2018)
         if isinstance(clip_limit, (int, float)):
             print("The fit will be iterated until it converges, that is, no more outliers, "
@@ -118,7 +120,7 @@ def vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=None,
                   "a normalized separation X<={:.3f}*median(X).\n".format(clip_limit))
 
             # Fitting with auto-elimination
-            pmt, sig, cor_mat, dra_r, ddc_r = auto_elim_vsh_fit(
+            pmt, sig, cor_mat, dra_r, ddc_r, mask = auto_elim_vsh_fit(
                 clip_limit, dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
                 ra_dc_cor=ra_dc_cor, l_max=l_max, fit_type=fit_type, num_iter=num_iter)
 
@@ -128,11 +130,13 @@ def vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=None,
 
     else:
         # No outlier elimination
-        print("No constraints put on the data, so the fitting will be done only once.")
+        print("No constraint is put on the data, so the fitting will be done only once.")
         # Do the fitting
         pmt, sig, cor_mat, dra_r, ddc_r = nor_eq_sol(
             dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cor=ra_dc_cor,
             l_max=l_max, fit_type=fit_type, num_iter=num_iter)
+        mask = np.full(num_sou, True)
+
     # Step 3: Calculate statistics of data
     # for pre-fit data
     apr_stats = residual_stats_calc(
@@ -149,13 +153,6 @@ def vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=None,
     check_vsh_sig(dra, ddc, pmt, sig, l_max)
 
     # Step 5: post-fit treatments
-    # Rescale the formal errors
-    sig = sig * np.sqrt(pos_stats["reduced_chi2"])
-
-    # First degrees -> rotation/glide
-    convert_ts_to_rotgli(pmt, sig, cor_mat)
-
-    # Return results
     output = {}
     output["note"] = [
         "pmt: fitted VSH parameters\n"
@@ -164,14 +161,30 @@ def vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=None,
         "residual: post-fit residual of (dra, ddec)\n"][0]
 
     output["pmt"] = pmt
-    output["sig"] = sig
+    output["sig_lsq"] = sig
     output["cor"] = cor_mat
     output["residual"] = [dra_r, ddc_r]
+
+    # 5.1 Rescale the formal errors
+    sig = sig * np.sqrt(pos_stats["reduced_chi2"])
+    output["sig"] = sig
+
+    # 5.2 Convert to glide/rotation/quadrupolar terms
+    # First 1/2 degrees -> rotation/glide/quadrupolar
+    pm1, err1, cor_mat1 = convert_ts_to_rgq(
+        pmt, sig, cor_mati, l_max, fit_type)
+    ouput = add_rgq_to_output(output, pmt1, err1, cor_mat1, l_max)
+
+    # 5.3 Rescale the formal uncertaity via nonparametric bootstrap resampling
+    if "bs_err" in kwargs.keys() and kwargs["bs_err"]:
+        output = bootstrap_resample_4_err(mask, dra, ddc, dra_err, ddc_err,
+                                          ra_rad, dc_rad, ra_dc_cor,
+                                          l_max, fit_type, num_iter, output)
 
     return output
 
 
-def vsh_fit_4_table(data_tab, l_max=1, fit_type="full", pos_in_rad=False,
+def vsh_fit_4_table(data_tab, l_max=l_max, fit_type="full", pos_in_rad=False,
                     num_iter=100, **kwargs):
     """VSH fit for Atstropy.Table
 
@@ -195,9 +208,9 @@ def vsh_fit_4_table(data_tab, l_max=1, fit_type="full", pos_in_rad=False,
     Returns
     ----------
     pmt : array of float
-        estimation of (d1, d2, d3, r1, r2, r3) in uas
+        estimation of (d1, d2, d3, r1, r2, r3) in dex
     sig : array of float
-        uncertainty of x in uas
+        uncertainty of x in dex
     cor_mat : matrix
         matrix of correlation coefficient.
     """
@@ -266,22 +279,20 @@ def vsh_fit_4_table(data_tab, l_max=1, fit_type="full", pos_in_rad=False,
 
 
 def rotgli_fit(dra, ddc, dra_err, ddc_err, ra, dc,
-               ra_dc_cor=None, l_max=1, fit_type="full",
+               ra_dc_cor=None,  fit_type="full",
                pos_in_rad=False, num_iter=100, **kwargs):
     """VSH degree 01 fit and return rotation &glide
 
     Parameters
     ----------
     dra/ddc : array of float
-        R.A.(*cos(Dec.))/Dec. differences in uas
+        R.A.(*cos(Dec.))/Dec. differences in dex
     dra_err/ddc_err : array of float
-        formal uncertainty of dra(*cos(dc_rad))/ddc in uas
+        formal uncertainty of dra(*cos(dc_rad))/ddc in dex
     ra_rad/dc_rad : array of float
         Right ascension/Declination in radian
     ra_dc_cor : array of float
         correlation coefficient between dra and ddc, default is None
-    l_max : int
-        maximum degree
     fit_type : string
         flag to determine which parameters to be fitted
         "full" for T- and S-vectors both
@@ -294,54 +305,45 @@ def rotgli_fit(dra, ddc, dra_err, ddc_err, ra, dc,
 
     Returns
     ----------
-    pmt1 : array of float
-        estimation of (d1, d2, d3, r1, r2, r3) in uas
-    sig1 : array of float
-        uncertainty of x in uas
-    cor_mat1 : matrix
-        matrix of correlation coefficient.
+    output : dict-like, float
+        -pmt : array of float
+            estimation of (d1, d2, d3, r1, r2, r3) in dex
+        -sig : array of float
+            uncertainty of x in dex
+        -cor_mat : matrix
+            matrix of correlation coefficient.
+        -pmt1 : array of float
+            estimation of glide/rotation/quadrupolar terms in dex
+        -sig1 : array of float
+            formal uncertainty of pmt1 in dex
+        -cor_mat1 : matrix
+            matrix of correlation coefficient among pmt1.
     """
 
     # VSH fit
     output = vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc,
-                     ra_dc_cor=ra_dc_cor, l_max=l_max,
+                     ra_dc_cor=ra_dc_cor, l_max=1,
                      fit_type=fit_type, pos_in_rad=pos_in_rad,
                      num_iter=num_iter, **kwargs)
-
-    pmt = output["pmt"]
-    sig = output["sig"]
-    cor_mat = output["cor"]
-
-    pmt1, sig1, cor_mat1 = st_to_rotgld(pmt[:6], sig[:6], cor_mat[:6, :6])
-    output["pmt1"] = pmt1
-    output["sig1"] = sig1
-    output["cor1"] = cor_mat1
-
-    output["note"] = output["note"] + [
-        "pmt1: glide+rotation\n"
-        "sig1: formal error of glide/rotation\n"
-        "cor1: correlation coeficient matrix of glide/rotation\n"][0]
 
     return output
 
 
 def rotgliquad_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=None,
-                   l_max=2, fit_type="full", pos_in_rad=False,
+                   fit_type="full", pos_in_rad=False,
                    num_iter=100, **kwargs):
     """VSH degree 02 fit and return rotation, glide, &quadrupolar vectors
 
     Parameters
     ----------
     dra/ddc : array of float
-        R.A.(*cos(Dec.))/Dec. differences in uas
+        R.A.(*cos(Dec.))/Dec. differences in dex
     dra_err/ddc_err : array of float
-        formal uncertainty of dra(*cos(dc_rad))/ddc in uas
+        formal uncertainty of dra(*cos(dc_rad))/ddc in dex
     ra_rad/dc_rad : array of float
         Right ascension/Declination in radian
     ra_dc_cor : array of float
         correlation coefficient between dra and ddc, default is None
-    l_max : int
-        maximum degree
     fit_type : string
         flag to determine which parameters to be fitted
         "full" for T- and S-vectors both
@@ -369,7 +371,7 @@ def rotgliquad_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=None,
 
     # VSH fit
     output = vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc,
-                     ra_dc_cor=ra_dc_cor, l_max=l_max,
+                     ra_dc_cor=ra_dc_cor, l_max=2,
                      fit_type=fit_type, pos_in_rad=pos_in_rad,
                      num_iter=num_iter, **kwargs)
 
@@ -392,7 +394,7 @@ def rotgliquad_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=None,
     return output
 
 
-def rotgli_fit_4_table(data_tab, l_max=1, fit_type="full", pos_in_rad=False,
+def rotgli_fit_4_table(data_tab, fit_type="full", pos_in_rad=False,
                        num_iter=100, **kwargs):
     """VSH degree 01 fit and return rotation &glide vectors for Atstropy.Table
 
@@ -401,8 +403,6 @@ def rotgli_fit_4_table(data_tab, l_max=1, fit_type="full", pos_in_rad=False,
     data_tab : Astropy.table-like
         must contain column names of ["dra", "ddec", "ra", "dec",
         "dra_err", "ddec_err"]
-    l_max : int
-        maximum degree
     fit_type : string
         flag to determine which parameters to be fitted
         "full" for T- and S-vectors both
@@ -416,16 +416,16 @@ def rotgli_fit_4_table(data_tab, l_max=1, fit_type="full", pos_in_rad=False,
     Returns
     ----------
     pmt : array of float
-        estimation of (d1, d2, d3, r1, r2, r3) in uas
+        estimation of (d1, d2, d3, r1, r2, r3) in dex
     sig : array of float
-        uncertainty of x in uas
+        uncertainty of x in dex
     cor_mat : matrix
         matrix of correlation coefficient.
     """
 
     # VSH fit
     output = vsh_fit_4_table(
-        data_tab, l_max=l_max, fit_type=fit_type, pos_in_rad=pos_in_rad,
+        data_tab, l_max=1, fit_type=fit_type, pos_in_rad=pos_in_rad,
         num_iter=num_iter, **kwargs)
 
     pmt = output["pmt"]
@@ -445,22 +445,20 @@ def rotgli_fit_4_table(data_tab, l_max=1, fit_type="full", pos_in_rad=False,
     return output
 
 
-def rotgliquad_fit_4_table(data_tab, l_max=2, fit_type="full", pos_in_rad=False,
+def rotgliquad_fit_4_table(data_tab, fit_type="full", pos_in_rad=False,
                            num_iter=100, **kwargs):
     """VSH degree 02 fit and return rotation, glide, &quadrupolar vectors for Atstropy.Table
 
     Parameters
     ----------
     dra/ddc : array of float
-        R.A.(*cos(Dec.))/Dec. differences in uas
+        R.A.(*cos(Dec.))/Dec. differences in dex
     dra_err/ddc_err : array of float
-        formal uncertainty of dra(*cos(dc_rad))/ddc in uas
+        formal uncertainty of dra(*cos(dc_rad))/ddc in dex
     ra_rad/dc_rad : array of float
         Right ascension/Declination in radian
     ra_dc_cor : array of float
         correlation coefficient between dra and ddc, default is None
-    l_max : int
-        maximum degree
     fit_type : string
         flag to determine which parameters to be fitted
         "full" for T- and S-vectors both
@@ -482,13 +480,9 @@ def rotgliquad_fit_4_table(data_tab, l_max=2, fit_type="full", pos_in_rad=False,
         matrix of correlation coefficient.
     """
 
-    if l_max < 2:
-        print("The maximum degree l_max could not be smaller than 2.")
-        sys.exit(1)
-
     # VSH fit
     output = vsh_fit_4_table(
-        data_tab, l_max=l_max, fit_type=fit_type, pos_in_rad=pos_in_rad,
+        data_tab, l_max=2, fit_type=fit_type, pos_in_rad=pos_in_rad,
         num_iter=num_iter, **kwargs)
 
     pmt = output["pmt"]

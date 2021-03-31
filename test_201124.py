@@ -18,7 +18,7 @@ from pmt_convert import st_to_rotgld
 
 test_tab = Table.read("test.csv")
 
-# Transform astropy.Column into np.array and mas -> uas
+# Transform astropy.Column into np.array and mas -> dex
 dra = np.array(test_tab["dra"] * 1e3)
 ddec = np.array(test_tab["ddec"] * 1e3)
 dra_err = np.array(test_tab["dra_err"] * 1e3)
@@ -28,8 +28,8 @@ dec = np.array(test_tab["dec"])
 dra_ddec_cov = np.array(test_tab["dra_ddec_cov"] * 1e6)
 
 print("        "
-      "               Rotation [uas]             "
-      "               Glide [uas]")
+      "               Rotation [dex]             "
+      "               Glide [dex]")
 print("        "
       "     G1            G2            G3        "
       "     R1            R2            R3        ")

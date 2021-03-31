@@ -164,17 +164,49 @@ def st_to_rotgldquad(pmt, err, cor_mat, fit_type="full"):
     return grq_vec, grq_err, grq_cor_mat
 
 
-def convert_ts_to_rotgli(pmt, err, cor_mat):
+def convert_ts_to_rgq(pmt, err, cor_mat, l_max, fit_type="full"):
     """Print Rotation/glide converted from t_lm and s_lm
+
+    Parameters
+    ----------
+    pmt : array-like of float
+        t_lm/s_lm coefficient
+    err : array-like of float
+        formal uncertaity of pmt
+    cor_mat : matrix-like, float
+        correlation coefficient matrix
+    l_max : int
+        maximum degree
+    fit_type : string
+        flag to determine which parameters to be fitted
+        "full" for T- and S-vectors both
+        "T" for T-vectors only
+        "S" for S-vectors only
+
+    Returns
+    -------
+    pmt1 : array of float
+        estimation of glide/rotation/quadrupolar terms in dex
+    sig1 : array of float
+        formal uncertainty of pmt1 in dex
+    cor_mat1 : matrix
+        matrix of correlation coefficient among pmt1.
     """
 
-    pmt1, err1, cor_mat1 = st_to_rotgld(pmt[:6], err[:6], cor_mat[:6])
+    if l_max == 1:
+        pmt1, err1, cor_mat1 = st_to_rotgld(pmt[:6], err[:6], cor_mat[:6]i, fit_type)
+    elif l_max >= 2:
+        pmt1, sig1, cor_mat1 = st_to_rotgldquad(
+            pmt[:16], sig[:16], cor_mat[:16, :16], fit_type)
+    else:
+        print(" l_max = {} is an invalid input.".format(l_max))
+        sys.exit(1)
 
     print("")
     print("Convert t_lm/s_lm at l=1 into rotation/glide vector")
     print("--------------------------------------------------------------------")
-    print("           Glide [uas]      "
-          "           Rotation [uas]   ")
+    print("           Glide [dex]      "
+          "           Rotation [dex]   ")
     print("  G1         G2        G3       "
           "  R1         R2        R3       ")
     print("--------------------------------------------------------------------")
@@ -183,14 +215,78 @@ def convert_ts_to_rotgli(pmt, err, cor_mat):
           "{4:+4.0f} {10:4.0f}  {5:+4.0f} {11:4.0f}  ".format(*pmt1[:6], *err1[:6]))
     print("--------------------------------------------------------------------")
 
+    return pmt1, err1, cor_mat1
+
+
+def add_rgq_to_output(output, pmt1, err1, cor_mat1, l_max):
+    """Add rotation/glide/quadrupolar terms to output
+
+    Parameter
+    ---------
+    output : dict-like, float
+        -pmt : array of float
+            estimation of (d1, d2, d3, r1, r2, r3) in dex
+        -sig : array of float
+            uncertainty of x in dex
+        -cor_mat : matrix
+            matrix of correlation coefficient.
+    pmt1 : array of float
+        estimation of glide/rotation/quadrupolar terms in dex
+    sig1 : array of float
+        formal uncertainty of pmt1 in dex
+    cor_mat1 : matrix
+        matrix of correlation coefficient among pmt1.
+    l_max : int
+        maximum degree
+
+    Return
+    ------
+    output : dict-like, float
+        -pmt : array of float
+            estimation of (d1, d2, d3, r1, r2, r3) in dex
+        -sig : array of float
+            uncertainty of x in dex
+        -cor_mat : matrix
+            matrix of correlation coefficient.
+        -pmt1 : array of float
+            estimation of glide/rotation/quadrupolar terms in dex
+        -sig1 : array of float
+            formal uncertainty of pmt1 in dex
+        -cor_mat1 : matrix
+            matrix of correlation coefficient among pmt1.
+    """
+
+    if l_max == 1:
+        output["pmt1"] = pmt1
+        output["sig1"] = sig1
+        output["cor1"] = cor_mat1
+        output["note"] = output["note"] + [
+            "pmt1: glide+rotation\n"
+            "sig1: formal error of glide/rotation\n"
+            "cor1: correlation coeficient matrix of glide/rotation\n"][0]
+
+    elif l_max >= 2:
+        output["pmt2"] = pmt1
+        output["sig2"] = sig1
+        output["cor2"] = cor_mat1
+        output["note"] = output["note"] + [
+            "pmt2: glide+rotation+quadrupolar\n"
+            "sig2: formal error of glide/rotation/quadrupolar\n"
+            "cor2: correlation coeficient matrix of glide/rotation/quad\n"][0]
+    else:
+        print(" l_max = {} is an invalid input.".format(l_max))
+        sys.exit(1)
+
+    return output
+
 
 def main():
-    '''Not implemented yet
+    """Not implemented yet
 
-    '''
+    """
     pass
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
 # --------------------------------- END --------------------------------

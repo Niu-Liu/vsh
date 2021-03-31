@@ -177,6 +177,9 @@ def auto_elim_vsh_fit(clip_limit, dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
         max_nor_sep2, mask2 = elim_on_nor_sep(
             clip_limit, dra_r, ddc_r, dra_err, ddc_err, ra_dc_cor)
 
+    # Record the mask
+    mask = mask1
+
     # If no source is classified as outlier
     if iter_count == 0:
         pmt, sig, cor_mat, dra_r, ddc_r = nor_eq_sol_from_cache(
@@ -185,7 +188,7 @@ def auto_elim_vsh_fit(clip_limit, dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
     # Remove cache file
     rm_cache_mat(suffix_array)
 
-    return pmt, sig, cor_mat, dra_r, ddc_r
+    return pmt, sig, cor_mat, dra_r, ddc_r, mask
 
 
 def std_elim_vsh_fit(x_limit, dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
@@ -222,8 +225,10 @@ def std_elim_vsh_fit(x_limit, dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
         estimation of(d1, d2, d3, r1, r2, r3)
     sig: array of float
         uncertainty of x
-    cor_mat: matrix
+    cor_mat : matrix
         matrix of correlation coefficient.
+    mask : array-like of boolean
+        flag for the clean sample
     """
 
     # Generate cache matrix
@@ -256,7 +261,7 @@ def std_elim_vsh_fit(x_limit, dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
     # Remove cache file
     rm_cache_mat(suffix_array)
 
-    return pmt, sig, cor_mat, dra_r, ddc_r
+    return pmt, sig, cor_mat, dra_r, ddc_r, mask
 
 
 def main():

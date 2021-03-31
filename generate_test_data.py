@@ -7,7 +7,7 @@ Created on Tue Nov 24 13:16:49 2020
 @author: Neo(niu.liu@nju.edu.cn)
 
 
-In order to simulate the case of Gaia EDR3 where 1.5M quasars are included, a
+In order to simulate the case of Gaia EDR3 where 1.5M qdexars are included, a
 test sample of this amount is generated.
 """
 

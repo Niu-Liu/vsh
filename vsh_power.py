@@ -114,7 +114,7 @@ def calc_field_power(dra, ddc):
     Parameters
     ----------
     dra/ddc : array of float
-        R.A.(*cos(Dec.))/Dec. differences, mostly in uas
+        R.A.(*cos(Dec.))/Dec. differences, mostly in dex
 
     Return
     ------

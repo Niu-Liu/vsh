@@ -26,13 +26,13 @@ def vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cov=None,
     Parameters
     ----------
     dra/ddc : array of float
-        R.A.(*cos(Dec.))/Dec. differences in uas
+        R.A.(*cos(Dec.))/Dec. differences in dex
     dra_err/ddc_err : array of float
-        formal uncertainty of dra(*cos(dc_rad))/ddc in uas
+        formal uncertainty of dra(*cos(dc_rad))/ddc in dex
     ra_rad/dc_rad : array of float
         Right ascension/Declination in radian
     ra_dc_cov/ra_dc_cor : array of float
-        covariance/correlation coefficient between dra and ddc in uas^2, default is None
+        covariance/correlation coefficient between dra and ddc in dex^2, default is None
     l_max : int
         maximum degree
     fit_type : string
@@ -48,9 +48,9 @@ def vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cov=None,
     Returns
     ----------
     pmt : array of float
-        estimaation of (d1, d2, d3, r1, r2, r3) in uas
+        estimation of (d1, d2, d3, r1, r2, r3) in dex
     sig : array of float
-        uncertainty of x in uas
+        uncertainty of x in dex
     cor_mat : matrix
         matrix of correlation coefficient.
     """
@@ -144,9 +144,9 @@ def vsh_fit_4_Table(data_tab, l_max=1, fit_type="full", pos_in_rad=False,
     Returns
     ----------
     pmt : array of float
-        estimaation of (d1, d2, d3, r1, r2, r3) in uas
+        estimation of (d1, d2, d3, r1, r2, r3) in dex
     sig : array of float
-        uncertainty of x in uas
+        uncertainty of x in dex
     cor_mat : matrix
         matrix of correlation coefficient.
     """

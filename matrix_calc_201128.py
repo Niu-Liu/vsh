@@ -236,7 +236,7 @@ def nor_mat_calc(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
     Parameters
     ----------
     dra_err/ddc_err : array of float
-        formal uncertainty of dRA(*cos(dc_rad))/dDE in uas
+        formal uncertainty of dRA(*cos(dc_rad))/dDE in dex
     ra_rad/dc_rad : array of float
         Right ascension/Declination in radian
     ra_dc_cov : array of float
@@ -316,13 +316,13 @@ def nor_eq_sol(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cov=None,
     Parameters
     ----------
     dra/ddc : array of float
-        R.A.(*cos(Dec.))/Dec. differences in uas
+        R.A.(*cos(Dec.))/Dec. differences in dex
     dra_err/ddc_err : array of float
-        formal uncertainty of dra(*cos(dc_rad))/ddc in uas
+        formal uncertainty of dra(*cos(dc_rad))/ddc in dex
     ra_rad/dc_rad : array of float
         Right ascension/Declination in radian
     ra_dc_cov/ra_dc_cor : array of float
-        covariance/correlation coefficient between dra and ddc in uas^2, default is None
+        covariance/correlation coefficient between dra and ddc in dex^2, default is None
     fit_type : string
         flag to determine which parameters to be fitted
         "full" for T- and S-vectors both
@@ -332,9 +332,9 @@ def nor_eq_sol(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cov=None,
     Returns
     ----------
     pmt : array of float
-        estimation of (d1, d2, d3, r1, r2, r3) in uas
+        estimation of (d1, d2, d3, r1, r2, r3) in dex
     sig : array of float
-        uncertainty of x in uas
+        uncertainty of x in dex
     cor_mat : matrix
         matrix of correlation coefficient.
     """

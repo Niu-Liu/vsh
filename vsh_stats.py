@@ -19,9 +19,9 @@ def residual_stats_calc(dra, ddc, dra_err, ddc_err, ra_dc_cor, num_dof):
     Parameters
     ----------
     dra/ddc : array of float
-        R.A.(*cos(Dec.))/Dec. differences in uas
+        R.A.(*cos(Dec.))/Dec. differences in dex
     dra_err/ddc_err : array of float
-        formal uncertainty of dra(*cos(dc_rad))/ddc in uas
+        formal uncertainty of dra(*cos(dc_rad))/ddc in dex
     ra_rad/dc_rad : array of float
         Right ascension/Declination in radian
     ra_dc_cor : array of float

@@ -19,13 +19,13 @@ def residual_statistics_calc(dra, ddc, dra_err, ddc_err, ra_dc_cov,
     Parameters
     ----------
     dra/ddc : array of float
-        R.A.(*cos(Dec.))/Dec. differences in uas
+        R.A.(*cos(Dec.))/Dec. differences in dex
     dra_err/ddc_err : array of float
-        formal uncertainty of dra(*cos(dc_rad))/ddc in uas
+        formal uncertainty of dra(*cos(dc_rad))/ddc in dex
     ra_rad/dc_rad : array of float
         Right ascension/Declination in radian
     ra_dc_cov/ra_dc_cor : array of float
-        covariance/correlation coefficient between dra and ddc in uas^2, default is None
+        covariance/correlation coefficient between dra and ddc in dex^2, default is None
     num_dof : int
         number of degree of freedom
 
