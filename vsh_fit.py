@@ -171,8 +171,8 @@ def vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=None,
 
     # 5.2 Convert to glide/rotation/quadrupolar terms
     # First 1/2 degrees -> rotation/glide/quadrupolar
-    pm1, err1, cor_mat1 = convert_ts_to_rgq(
-        pmt, sig, cor_mati, l_max, fit_type)
+    pmt1, err1, cor_mat1 = convert_ts_to_rgq(
+        pmt, sig, cor_mat, l_max, fit_type)
     ouput = add_rgq_to_output(output, pmt1, err1, cor_mat1, l_max)
 
     # 5.3 Rescale the formal uncertaity via nonparametric bootstrap resampling
@@ -184,7 +184,7 @@ def vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=None,
     return output
 
 
-def vsh_fit_4_table(data_tab, l_max=l_max, fit_type="full", pos_in_rad=False,
+def vsh_fit_4_table(data_tab, l_max=1, fit_type="full", pos_in_rad=False,
                     num_iter=100, **kwargs):
     """VSH fit for Atstropy.Table
 
@@ -375,22 +375,6 @@ def rotgliquad_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=None,
                      fit_type=fit_type, pos_in_rad=pos_in_rad,
                      num_iter=num_iter, **kwargs)
 
-    pmt = output["pmt"]
-    sig = output["sig"]
-    cor_mat = output["cor"]
-
-    pmt2, sig2, cor_mat2 = st_to_rotgldquad(
-        pmt[:16], sig[:16], cor_mat[:16, :16])
-
-    output["pmt2"] = pmt2
-    output["sig2"] = sig2
-    output["cor2"] = cor_mat2
-
-    output["note"] = output["note"] + [
-        "pmt2: glide+rotation+quadrupolar\n"
-        "sig2: formal error of glide/rotation/quadrupolar\n"
-        "cor2: correlation coeficient matrix of glide/rotation/quad\n"][0]
-
     return output
 
 
@@ -427,20 +411,6 @@ def rotgli_fit_4_table(data_tab, fit_type="full", pos_in_rad=False,
     output = vsh_fit_4_table(
         data_tab, l_max=1, fit_type=fit_type, pos_in_rad=pos_in_rad,
         num_iter=num_iter, **kwargs)
-
-    pmt = output["pmt"]
-    sig = output["sig"]
-    cor_mat = output["cor"]
-
-    pmt1, sig1, cor_mat1 = st_to_rotgld(pmt[:6], sig[:6], cor_mat[:6, :6])
-    output["pmt1"] = pmt1
-    output["sig1"] = sig1
-    output["cor1"] = cor_mat1
-
-    output["note"] = output["note"] + [
-        "pmt1: glide+rotation\n"
-        "sig1: formal error of glide/rotation\n"
-        "cor1: correlation coeficient matrix of glide/rotation\n"][0]
 
     return output
 
@@ -484,22 +454,6 @@ def rotgliquad_fit_4_table(data_tab, fit_type="full", pos_in_rad=False,
     output = vsh_fit_4_table(
         data_tab, l_max=2, fit_type=fit_type, pos_in_rad=pos_in_rad,
         num_iter=num_iter, **kwargs)
-
-    pmt = output["pmt"]
-    sig = output["sig"]
-    cor_mat = output["cor"]
-
-    pmt2, sig2, cor_mat2 = st_to_rotgldquad(
-        pmt[:16], sig[:16], cor_mat[:16, :16])
-
-    output["pmt2"] = pmt2
-    output["sig2"] = sig2
-    output["cor2"] = cor_mat2
-
-    output["note"] = output["note"] + [
-        "pmt2: glide+rotation+quadrupolar\n"
-        "sig2: formal error of glide/rotation/quadrupolar\n"
-        "cor2: correlation coeficient matrix of glide/rotation/quad\n"][0]
 
     return output
 

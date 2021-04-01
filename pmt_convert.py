@@ -194,7 +194,7 @@ def convert_ts_to_rgq(pmt, err, cor_mat, l_max, fit_type="full"):
     """
 
     if l_max == 1:
-        pmt1, err1, cor_mat1 = st_to_rotgld(pmt[:6], err[:6], cor_mat[:6]i, fit_type)
+        pmt1, err1, cor_mat1 = st_to_rotgld(pmt[:6], err[:6], cor_mat[:6], fit_type)
     elif l_max >= 2:
         pmt1, sig1, cor_mat1 = st_to_rotgldquad(
             pmt[:16], sig[:16], cor_mat[:16, :16], fit_type)
@@ -218,7 +218,7 @@ def convert_ts_to_rgq(pmt, err, cor_mat, l_max, fit_type="full"):
     return pmt1, err1, cor_mat1
 
 
-def add_rgq_to_output(output, pmt1, err1, cor_mat1, l_max):
+def add_rgq_to_output(output, pmt1, sig1, cor_mat1, l_max):
     """Add rotation/glide/quadrupolar terms to output
 
     Parameter
