@@ -7,8 +7,10 @@ Created on Tue Nov 17 13:48:25 2020
 @author: Neo(niu.liu@nju.edu.cn)
 """
 
+import os
 import sys
 import numpy as np
+
 # My progs
 from .matrix_calc import nor_eq_sol, residual_calc
 from .vsh_significance import check_vsh_sig
@@ -48,6 +50,8 @@ def vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=None,
         number of source once processed. 100 should be fine
     clip_limit : float
         thershold on normalized separation for auto-elimination
+    verbose : boolean
+        if True, print log information
 
     Returns
     ----------
@@ -80,6 +84,12 @@ def vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=None,
 
     # Number of degree of freedom
     num_dof = 2 * num_sou - num_pmt - 1
+
+    # Do not print log information
+    if "verbose" in kwargs.keys() and not kwargs["verbose"]:
+        old_target = sys.stdout
+        f = open(os.devnull, "w")
+        sys.stdout = f
 
     # 1.2 Print basic information
     print("----------------------- VSH Fit (by Niu LIU) -----------------------")
@@ -147,10 +157,12 @@ def vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=None,
         dra_r, ddc_r, dra_err, ddc_err, ra_dc_cor, num_dof)
 
     # Print statistics information
-    print_stats_info(apr_stats, pos_stats)
+    if "print_stats" in kwargs.keys() and kwargs["print_stats"]:
+        print_stats_info(apr_stats, pos_stats)
 
     # Step 4: Check the significance level
-    check_vsh_sig(dra, ddc, pmt, sig, l_max)
+    if "check_sig" in kwargs.keys() and kwargs["check_sig"]:
+        check_vsh_sig(dra, ddc, pmt, sig, l_max, fit_type)
 
     # Step 5: post-fit treatments
     output = {}
@@ -180,6 +192,11 @@ def vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=None,
         output = bootstrap_resample_4_err(mask, dra, ddc, dra_err, ddc_err,
                                           ra_rad, dc_rad, ra_dc_cor,
                                           l_max, fit_type, num_iter, output)
+
+    # Cancelling the redirection of sys.stdout
+    if "verbose" in kwargs.keys() and not kwargs["verbose"]:
+        f.close()
+        sys.stdout = old_target
 
     return output
 
@@ -266,6 +283,8 @@ def vsh_fit_4_table(data_tab, l_max=1, fit_type="full", pos_in_rad=False,
         dra_ddc_cor = np.array(data_tab["dra_ddec_cor"])
     elif "pmra_pmdec_corr" in data_tab.colnames:
         dra_ddc_cor = np.array(data_tab["pmra_pmdec_corr"])
+    elif "pmra_pmdec_cor" in data_tab.colnames:
+        dra_ddc_cor = np.array(data_tab["pmra_pmdec_cor"])
     else:
         dra_ddc_cor = None
 

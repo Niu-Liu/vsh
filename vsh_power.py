@@ -74,7 +74,7 @@ def calc_vsh_power_l(ts_pmt, l_max):
     return Pts
 
 
-def calc_vsh_power(ts_pmt, l_max):
+def calc_vsh_power(ts_pmt, l_max, fit_type="Full"):
     """Calculate power of toroidal and spheroidal component
 
     Parameters
@@ -90,14 +90,30 @@ def calc_vsh_power(ts_pmt, l_max):
         powers of toroidal/spheroidal
     """
 
+    if fit_type in ["FULL", "full", "f", "F"]:
+        N = 2*(l_max+2)*l_max
+    elif fit_type in ["S", "T", "s", "t"]:
+        N = (l_max+2)*l_max
+    else:
+        print("Unrecognized fit_type!")
+        sys.exit()
+
     # Check of ts_pmt and l_max match
-    if len(ts_pmt) != 2*(l_max+2)*l_max:
+    if len(ts_pmt) != N:
         print("The length of ts_pmt and l_max does not match!")
         sys.exit()
 
-    # Separate t_lm and s_lm
-    t_pmt = ts_pmt[0::2]
-    s_pmt = ts_pmt[1::2]
+    if fit_type in ["FULL", "full", "f", "F"]:
+        # Both S and T vector
+        # Separate t_lm and s_lm
+        t_pmt = ts_pmt[0::2]
+        s_pmt = ts_pmt[1::2]
+    elif fit_type in ["T", "t"]:
+        t_pmt = ts_pmt
+        s_pmt = np.zeros_like(t_pmt)
+    else:
+        t_pmt = np.zeros_like(t_pmt)
+        s_pmt = ts_pmt
 
     # Power of toroidal and spheroidal component
     P_t = calc_vsh_power_l(t_pmt, l_max)

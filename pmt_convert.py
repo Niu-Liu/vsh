@@ -202,6 +202,18 @@ def convert_ts_to_rgq(pmt, err, cor_mat, l_max, fit_type="full"):
         print(" l_max = {} is an invalid input.".format(l_max))
         sys.exit(1)
 
+    if fit_type in ["T", "t"]:
+        pmt1_out = np.hstack(([0, 0, 0], pmt1))
+        err1_out = np.hstack(([0, 0, 0], err1))
+    elif fit_type in ["S", "s"]:
+        pmt1_out = np.hstack((pmt1, [0, 0, 0]))
+        err1_out = np.hstack((err1, [0, 0, 0]))
+    elif fit_type in ["full", "Full"]:
+        pmt1_out = pmt1
+        err1_out = err1
+    else:
+        sys.exit(1)
+
     print("")
     print("Convert t_lm/s_lm at l=1 into rotation/glide vector")
     print("--------------------------------------------------------------------")
@@ -212,7 +224,8 @@ def convert_ts_to_rgq(pmt, err, cor_mat, l_max, fit_type="full"):
     print("--------------------------------------------------------------------")
     print("{0:+4.0f} {6:4.0f}  {1:+4.0f} {7:4.0f} "
           "{2:+4.0f} {8:4.0f}  {3:+4.0f} {9:4.0f} "
-          "{4:+4.0f} {10:4.0f}  {5:+4.0f} {11:4.0f}  ".format(*pmt1[:6], *err1[:6]))
+          "{4:+4.0f} {10:4.0f}  {5:+4.0f} {11:4.0f}  ".format(
+              *pmt1_out[:6], *err1_out[:6]))
     print("--------------------------------------------------------------------")
 
     return pmt1, err1, cor_mat1

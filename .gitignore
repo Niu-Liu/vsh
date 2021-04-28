@@ -140,7 +140,7 @@ cython_debug/
 # Mac-OS backup
 .DS_Store
 
-# Jupyter notebook 
+# Jupyter notebook
 .ipynb_checkpoints/
 test/
 seb/

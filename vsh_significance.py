@@ -171,7 +171,7 @@ def calc_vsh_nor_power_l(ts_pmt, ts_pmt_err, l_max, nor_type="3"):
     return Wts
 
 
-def calc_vsh_nor_power(ts_pmt, ts_pmt_err, l_max, nor_type="3"):
+def calc_vsh_nor_power(ts_pmt, ts_pmt_err, l_max, nor_type="3", fit_type="f"):
     """Calculate normalized power of toroidal and spheroidal component
 
     Parameters
@@ -190,7 +190,15 @@ def calc_vsh_nor_power(ts_pmt, ts_pmt_err, l_max, nor_type="3"):
     """
 
     # Check of ts_pmt and l_max match
-    if len(ts_pmt) != 2*(l_max+2)*l_max:
+    if fit_type in ["FULL", "full", "f", "F"]:
+        N = 2*(l_max+2)*l_max
+    elif fit_type in ["S", "T", "s", "t"]:
+        N = (l_max+2)*l_max
+    else:
+        print("Unrecognized fit_type!")
+        sys.exit()
+
+    if len(ts_pmt) != N:
         print("The length of ts_pmt and l_max does not matchi!")
         sys.exit()
     if len(ts_pmt) != len(ts_pmt_err):
@@ -198,12 +206,23 @@ def calc_vsh_nor_power(ts_pmt, ts_pmt_err, l_max, nor_type="3"):
         sys.exit()
 
     # Separate t_lm and s_lm
-    t_pmt, t_pmt_err = ts_pmt[0::2], ts_pmt_err[0::2]
-    s_pmt, s_pmt_err = ts_pmt[1::2], ts_pmt_err[1::2]
 
-    # Normalized power of toroidal and spheroidal component
-    W_t = calc_vsh_nor_power_l(t_pmt, t_pmt_err, l_max, nor_type)
-    W_s = calc_vsh_nor_power_l(s_pmt, s_pmt_err, l_max, nor_type)
+    if fit_type in ["FULL", "full", "f", "F"]:
+        # Both S and T vector
+        # Separate t_lm and s_lm
+        t_pmt, t_pmt_err = ts_pmt[0::2], ts_pmt_err[0::2]
+        s_pmt, s_pmt_err = ts_pmt[1::2], ts_pmt_err[1::2]
+
+        # Normalized power of toroidal and spheroidal component
+        W_t = calc_vsh_nor_power_l(t_pmt, t_pmt_err, l_max, nor_type)
+        W_s = calc_vsh_nor_power_l(s_pmt, s_pmt_err, l_max, nor_type)
+
+    elif fit_type in ["T", "t"]:
+        W_t = calc_vsh_nor_power_l(ts_pmt, ts_pmt, l_max, nor_type)
+        W_s = np.zeros_like(W_t)
+    else:
+        W_s = calc_vsh_nor_power_l(ts_pmt, ts_pmt, l_max, nor_type)
+        W_t = np.zeros_like(W_s)
 
     return W_t, W_s
 
@@ -251,27 +270,39 @@ def calc_Z(Wts):
     return Zts
 
 
-def check_vsh_sig(dra, ddc, ts_pmt, ts_pmt_err, l_max):
+def check_vsh_sig(dra, ddc, ts_pmt, ts_pmt_err, l_max, fit_type="f"):
     """Check significance of VSH terms
 
+    Parameters
+    ----------
+    dra/ddc : array of float
+        R.A.(*cos(Dec.))/Dec. differences in dex
+    ts_pmt : array of (l_max+2)*l_max
+        coefficient of t_lm or s_lm, m=1,2,..,l, l=1,2,...,l_max
+    ts_pmt_err : array of (l_max+2)*l_max
+        standard deviation of coefficient of t_lm or s_lm, m=1,2,..,l, l=1,2,...,l_max
+    l_max : int
+        maximum degree
         standard deviation of coefficient of t_lm or s_lm, m=1,2,..,l, l=1,2,...,l_max
     l_max : int
         maximum degree
 #    num_dof : int
 #        number of degrees of freedom
+
+    No returns
     """
 
     # Power of vector field
     P_field = calc_field_power(dra, ddc)
 
     # Power of degree l
-    P_t, P_s = calc_vsh_power(ts_pmt, l_max)
+    P_t, P_s = calc_vsh_power(ts_pmt, l_max, fit_type)
 
     # Remaining power
     P_rem = calc_rem_power(P_t+P_s, P_field, l_max)
 
     # Omega-statistics
-    W_t, W_s = calc_vsh_nor_power(ts_pmt, ts_pmt_err, l_max)
+    W_t, W_s = calc_vsh_nor_power(ts_pmt, ts_pmt_err, l_max, fit_type)
 
     # Z-statistics
     Z_t, Z_s = calc_Z(W_t), calc_Z(W_s)
