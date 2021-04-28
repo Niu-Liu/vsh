@@ -6,4 +6,4 @@ For details about the VSH, please look at [Mignard and Klioner, A&A 547, A59(201
 At present stage, these codes are just some separated ones.
 These code might be merged into a Python module, which depends mainly on how much free time I have. 
 
-For any questions, please contact me at [niu.liu@obspm.fr](niu.liu@obspm.fr).
+For any questions, please contact me at [niu.liu@obspm.fr](niu.liu@nju.edu.cn).
