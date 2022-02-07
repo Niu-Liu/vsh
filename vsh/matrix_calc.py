@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # File name: matrix_calc.py
-'''
+"""
 Created on Thu May  7 20:56:54 2020
 
 @author: Neo(liuniu@smail.nju.edu.cn)
@@ -13,17 +13,35 @@ The normal equation is writtern as
 where A is the normal matrix, x the vector consist of unknowns,
 and b the right-hand-side array.
 
-'''
+"""
 
 import sys
+from sys import platform as _platform
 import os
 import numpy as np
 from numpy import pi, concatenate
+
 # My progs
 # from .vsh_expansion import real_vec_sph_harm_proj
 from .vsh_expansion import real_vec_sph_harm_proj, vec_sph_harm_proj
 
 # -----------------------------  FUNCTIONS -----------------------------
+
+
+def check_tmp_dir():
+    """Determine directory to put cache according to OS
+
+    """
+
+    # Check the type of OS and get the home diretory path
+    if _platform in ["linux", "linux2", "darwin"]:
+        # Unix-like
+        tmp_dir = "/tmp/"
+    else:
+        # Windows or others
+        tmp_dir = ""
+
+    return tmp_dir
 
 
 def cov_to_cor(cov_mat):
@@ -72,7 +90,7 @@ def cov_mat_calc(dra_err, ddc_err, ra_dc_cor=None):
     """
 
     if len(ddc_err) != len(dra_err):
-        print('The length of dra_err and ddc_err should be equal')
+        print("The length of dra_err and ddc_err should be equal")
         sys.exit()
 
     # Covariance matrix.
@@ -129,7 +147,7 @@ def jac_mat_l_calc(T_ra_mat, T_dc_mat, l, fit_type="full"):
         degree of the harmonics
     fit_type : string
         flag to determine which parameters to be fitted
-        'full' for T- and S-vectors bot Number of observations
+        "full" for T- and S-vectors bot Number of observations
     """
 
     # Number of source
@@ -211,9 +229,9 @@ def jac_mat_calc(ra_rad, dc_rad, l_max, fit_type="full"):
         maximum degree
     fit_type : string
         flag to determine which parameters to be fitted
-        'full' for T- and S-vectors both
-        'T' for T-vectors only
-        'S' for S-vectors only
+        "full" for T- and S-vectors both
+        "T" for T-vectors only
+        "S" for S-vectors only
 
     Returns
     ----------
@@ -265,9 +283,9 @@ def nor_mat_calc(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
         maximum degree
     fit_type : string
         flag to determine which parameters to be fitted
-        'full' for T- and S-vectors both
-        'T' for T-vectors only
-        'S' for S-vectors only
+        "full" for T- and S-vectors both
+        "T" for T-vectors only
+        "S" for S-vectors only
     suffix : string
         suffix for output matrix file
     save_mat : boolean
@@ -299,10 +317,10 @@ def nor_mat_calc(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad,
 
     # Save matrice for later use
     if save_mat:
-        np.save('/tmp/jac_mat_{:s}.npy'.format(suffix), jac_mat)
-        # np.save('/tmp/wgt_mat_{:s}.npy'.format(suffix), wgt_mat)
-        np.save('/tmp/mul_mat_{:s}.npy'.format(suffix), mul_mat)
-        np.save('/tmp/nor_mat_{:s}.npy'.format(suffix), nor_mat)
+        np.save("{:s}jac_mat_{:s}.npy".format(tmp_dir, suffix), jac_mat)
+        # np.save("{:s}wgt_mat_{:s}.npy".format(tmp_dir, suffix), wgt_mat)
+        np.save("{:s}mul_mat_{:s}.npy".format(tmp_dir, suffix), mul_mat)
+        np.save("{:s}nor_mat_{:s}.npy".format(tmp_dir, suffix), nor_mat)
 
     return nor_mat, rhs_mat
 
@@ -398,9 +416,9 @@ def residual_calc(dra, ddc, ra_rad, dc_rad, pmt, l_max, fit_type="full",
         estimation of (d1, d2, d3, r1, r2, r3)
     fit_type : string
         flag to determine which parameters to be fitted
-        'full' for T- and S-vectors both
-        'T' for T-vectors only
-        'S' for S-vectors only
+        "full" for T- and S-vectors both
+        "T" for T-vectors only
+        "S" for S-vectors only
     l_max : int
         maximum degree
 
@@ -437,9 +455,9 @@ def nor_eq_sol(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cor=None,
         covariance/correlation coefficient between dra and ddc^2, default is None
     fit_type : string
         flag to determine which parameters to be fitted
-        'full' for T- and S-vectors both
-        'T' for T-vectors only
-        'S' for S-vectors only
+        "full" for T- and S-vectors both
+        "T" for T-vectors only
+        "S" for S-vectors only
 
     Returns
     ----------
@@ -522,9 +540,9 @@ def nor_mat_calc_for_cache(dra_err, ddc_err, ra_rad, dc_rad,
         maximum degree
     fit_type : string
         flag to determine which parameters to be fitted
-        'full' for T- and S-vectors both
-        'T' for T-vectors only
-        'S' for S-vectors only
+        "full" for T- and S-vectors both
+        "T" for T-vectors only
+        "S" for S-vectors only
     suffix : string
         suffix for output matrix file
     save_mat : boolean
@@ -551,10 +569,10 @@ def nor_mat_calc_for_cache(dra_err, ddc_err, ra_rad, dc_rad,
     nor_mat = np.dot(mul_mat, jac_mat)
 
     # Save matrice for later use
-    np.save("/tmp/jac_mat_{:s}.npy".format(suffix), jac_mat)
-    # np.save("/tmp/wgt_mat_{:s}.npy".format(suffix), wgt_mat)
-    np.save("/tmp/mul_mat_{:s}.npy".format(suffix), mul_mat)
-    np.save("/tmp/nor_mat_{:s}.npy".format(suffix), nor_mat)
+    np.save("/{:s}/jac_mat_{:s}.npy".format(tmp_dir, suffix), jac_mat)
+    # np.save("/{:s}/wgt_mat_{:s}.npy".format(tmp_dir, suffix), wgt_mat)
+    np.save("/{:s}/mul_mat_{:s}.npy".format(tmp_dir, suffix), mul_mat)
+    np.save("/{:s}/nor_mat_{:s}.npy".format(tmp_dir, suffix), nor_mat)
 
 
 def cache_mat_calc(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cor=None,
@@ -573,9 +591,9 @@ def cache_mat_calc(dra, ddc, dra_err, ddc_err, ra_rad, dc_rad, ra_dc_cor=None,
         covariance/correlation coefficient between dra and ddc, default is None
     fit_type : string
         flag to determine which parameters to be fitted
-        'full' for T- and S-vectors both
-        'T' for T-vectors only
-        'S' for S-vectors only
+        "full" for T- and S-vectors both
+        "T" for T-vectors only
+        "S" for S-vectors only
 
     Returns
     ----------
@@ -649,10 +667,10 @@ def nor_mat_calc_from_cahce(dra, ddc, suffix):
     """
 
     # Jac_mat_T * Wgt_mat
-    mul_mat = np.load("/tmp/mul_mat_{:s}.npy".format(suffix))
+    mul_mat = np.load("{:s}mul_mat_{:s}.npy".format(tmp_dir, suffix))
 
     # Calculate normal matrix A
-    nor_mat = np.load("/tmp/nor_mat_{:s}.npy".format(suffix))
+    nor_mat = np.load("{:s}nor_mat_{:s}.npy".format(tmp_dir, suffix))
 
     # Calculate right-hand-side matrix b
     res_mat = concatenate((dra, ddc), axis=0)
@@ -679,7 +697,7 @@ def predict_mat_calc_from_cache(pmt, suffix):
         predicted offset in Declination
     """
 
-    jac_mat = np.load("/tmp/jac_mat_{:s}.npy".format(suffix))
+    jac_mat = np.load("{:s}jac_mat_{:s}.npy".format(tmp_dir, suffix))
     dra_ddc = np.dot(jac_mat, pmt)
     num_sou = int(len(dra_ddc)/2)
     dra_pre, ddc_pre = dra_ddc[:num_sou], dra_ddc[num_sou:]
@@ -789,11 +807,11 @@ def rm_cache_mat(suffix_array):
 
     for suffix in suffix_array:
         # Delete Jacobian matrix file
-        os.system("rm /tmp/jac_mat_{:s}.npy".format(suffix))
+        os.remove("{:s}jac_mat_{:s}.npy".format(tmp_dir, suffix))
 
         # Delete multiplication matrix file
-        os.system("rm /tmp/mul_mat_{:s}.npy".format(suffix))
+        os.remove("{:s}mul_mat_{:s}.npy".format(tmp_dir, suffix))
 
         # Delete normal matrix file
-        os.system("rm /tmp/nor_mat_{:s}.npy".format(suffix))
+        os.remove("{:s}nor_mat_{:s}.npy".format(tmp_dir, suffix))
 # --------------------------------- END --------------------------------
