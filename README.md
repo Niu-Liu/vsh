@@ -7,3 +7,20 @@ At present stage, these codes are just some separated ones.
 These code might be merged into a Python module, which depends mainly on how much free time I have. 
 
 For any questions, please contact me at [niu.liu@obspm.fr](niu.liu@nju.edu.cn).
+
+
+# How to install
+
+First clone this resposity in the your local machine by
+```
+git clone https://github.com/Niu-Liu/vsh.git
+```
+
+Then, enter the directory and run the commands to install the package
+```
+cd vsh
+python setup.py sdist
+python setup.py install
+```
+
+The installation is done.

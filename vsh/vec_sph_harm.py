@@ -122,9 +122,9 @@ def vec_sph_harm_proj(l, m, ra, dc, sph_type="T"):
     # Actually S-vector could be derived from T-vector
 #    S_ra = facB * (0+1j)
 #    S_dc = facA
-    if sph_type == "T":
+    if sph_type is "T":
         return T_ra, T_dc
-    elif sph_type == "S":
+    elif sph_type is "S":
         S_ra = -T_dc
         S_dc = T_ra
         return S_ra, S_dc

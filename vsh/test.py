@@ -30,7 +30,7 @@ test_tab = generate_test_sample(int(2e3), pmt_vec)
 time_s = time.time()
 
 # DO the LSQ fitting
-pmt, err, cor_mat = vsh_fit_4_table(test_tab, l_max=1, pos_in_rad=True)
+output = vsh_fit_4_table(test_tab, l_max=1, pos_in_rad=True)
 
 # Record the end time
 time_d = time.time()

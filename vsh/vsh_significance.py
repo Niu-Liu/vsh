@@ -46,7 +46,7 @@ def calc_vsh_nor_power_lm1(ts_lm, ts_lm_err, l):
 
     # Calculate the normal power
     Pts_l = calc_vsh_power_lm(ts_lm, l)
-    Wts_li = Pts_l / ts_lm_err[0]**2
+    Wts_l1 = Pts_l / ts_lm_err[0]**2
 
     return Wts_l1
 

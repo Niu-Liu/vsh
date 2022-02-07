@@ -42,7 +42,6 @@ def vsh_func01(ra, dec, g1, g2, g3, r1, r2, r3):
     return dra, ddec
 
 
-# ---------------------------------------------------
 def vsh_func02(ra, dec,
                ER_22, EI_22, ER_21, EI_21, E_20,
                MR_22, MI_22, MR_21, MI_21, M_20):

@@ -8,7 +8,8 @@ Created on Thu May  7 20:22:39 2020
 
 Calculate the vector spherical harmonics (VSH).
 
-For an introduction of the VSH, please refer to F. Mignard and S. Klioner, A&A 547, A59 (2012).
+For an introduction of the VSH, please refer to
+F. Mignard and S. Klioner, A&A 547, A59 (2012).
 DOI: 10.1051/0004-6361/201219927.
 
 24/11/2020: use scipy.special.lpmn to generate the associated Legendre functions
@@ -38,9 +39,7 @@ def mat_2_seq(mat):
 
 
 def vec_sph_harm_proj(l_max, ra, dc, sph_type="T"):
-    """Calculate the vsh function at (ra, dec)
-
-    Note that ra and dec should be scalar rather than vector
+    """Calculate the VSH function at (ra, dec)
 
     Parameters
     ----------
@@ -125,7 +124,7 @@ def vec_sph_harm_proj(l_max, ra, dc, sph_type="T"):
 
 
 def real_vec_sph_harm_proj(l, m, T_ra_mat, T_dc_mat):
-    """Calculate the real (not complex) vsh function of (l,m) at x used.
+    """Calculate the real (not complex) VSH function of (l,m) at x used.
 
     VSH functions used for real expansion according to Eq.(30) in the reference.
 
@@ -134,10 +133,8 @@ def real_vec_sph_harm_proj(l, m, T_ra_mat, T_dc_mat):
 
     Parameters
     ----------
-    l_max: int
-        maximum degree of the harmonics
-    ra, dc: float
-        equatorial coordinates in the unit of radian
+    l, m: int
+        degree and order of the harmonics
 
     Returns
     -------

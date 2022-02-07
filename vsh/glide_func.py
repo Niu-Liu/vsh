@@ -293,7 +293,7 @@ def test_code(flag):
     '''Used for verified the code.
     '''
 
-    if flag is 1:
+    if flag == 1:
         # print(glide_apex_calc(np.array([1.2, 2.4, 7.5]),
         # np.array([0.6, 0.8, 1.0])))
 
@@ -429,7 +429,7 @@ def test_code(flag):
             print('Result of my calculation:', glide_apex_calc(dipi, derri))
             print('For g:', np.sqrt(np.dot(derri, derri)))
 
-    elif flag is 2:
+    elif flag == 2:
         g, RA, DC = 5.4, 256.0, -30
         err_g, err_RA, err_DC = 0.6, 4.0, 5.0
         print('Input: ', g, RA, DC, err_g, err_RA, err_DC)

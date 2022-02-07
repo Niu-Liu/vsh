@@ -20,11 +20,12 @@ import os
 import numpy as np
 from numpy import pi, concatenate
 # My progs
-# from .vsh_expension import real_vec_sph_harm_proj
-from .vsh_expension import real_vec_sph_harm_proj, vec_sph_harm_proj
-
+# from .vsh_expansion import real_vec_sph_harm_proj
+from .vsh_expansion import real_vec_sph_harm_proj, vec_sph_harm_proj
 
 # -----------------------------  FUNCTIONS -----------------------------
+
+
 def cov_to_cor(cov_mat):
     """Convert covariance matrix to sigma and correlation coefficient matrix
     """
@@ -93,7 +94,7 @@ def cov_mat_calc(dra_err, ddc_err, ra_dc_cor=None):
 
 
 def wgt_mat_calc(dra_err, ddc_err, ra_dc_cor=None):
-    '''Calculate the weight matrix.
+    """Calculate the weight matrix.
 
     Parameters
     ----------
@@ -106,7 +107,7 @@ def wgt_mat_calc(dra_err, ddc_err, ra_dc_cor=None):
     ----------
     wgt_matrix : matrix
         weighted matrix used in the least squares fitting.
-    '''
+    """
 
     # Calculate the covariance matrix
     cov_mat = cov_mat_calc(dra_err, ddc_err, ra_dc_cor)
@@ -191,7 +192,7 @@ def jac_mat_l_calc(T_ra_mat, T_dc_mat, l, fit_type="full"):
         n1, n2 = 2*M, 2*l+1
 
     if jac_mat.shape != (n1, n2):
-        print("Shape of Jocabian matrix at l={} is ({},{}) "
+        print("Shape of Jacobian matrix at l={} is ({},{}) "
               "rather than ({},{})".format(
                   l, jac_mat.shape[0], jac_mat.shape[1], n1, n2))
         sys.exit(1)
@@ -239,7 +240,7 @@ def jac_mat_calc(ra_rad, dc_rad, l_max, fit_type="full"):
         n1, n2 = 2 * M, l_max * (l_max+2)
 
     if jac_mat.shape != (n1, n2):
-        print("Shape of Jocabian matrix at l={} is ({},{}) "
+        print("Shape of Jacobian matrix at l={} is ({},{}) "
               "rather than ({},{})".format(
                   l, jac_mat.shape[0], jac_mat.shape[1], n1, n2))
         sys.exit(1)

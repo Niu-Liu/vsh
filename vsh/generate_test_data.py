@@ -13,6 +13,7 @@ test sample of this amount is generated.
 
 import numpy as np
 from astropy.table import Table
+
 # My modules
 from .rgq_func import vsh_func
 
@@ -20,7 +21,6 @@ from .rgq_func import vsh_func
 # -----------------------------  MAIN -----------------------------
 def generate_test_sample(sample_size, pmt_vec):
     """
-
     """
 
     # A sample of sources located as (ra, dec)
@@ -51,14 +51,12 @@ def generate_test_sample(sample_size, pmt_vec):
 
 def main():
     """
-
     """
 
     # Read the simulated data
     rot_vec = np.array([20, 30, 15])
     gli_vec = np.array([30, 24, 12])
-    qua_vec = np.array([-10, 20, -3, 5, 30, 9, 12, 39, 40, 12])
-    pmt_vec = np.concatenate((gli_vec, rot_vec, qua_vec))
+    pmt_vec = np.concatenate((gli_vec, rot_vec))
     data = generate_test_sample(int(2e6), pmt_vec)
     data.write("test_sample.csv", format="ascii.csv")
 

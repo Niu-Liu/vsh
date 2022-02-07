@@ -112,7 +112,7 @@ def vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=None,
             print("Parameter 'x_limit' must be a float-like value.")
             sys.exit(1)
 
-        print("The LSQ fit is performed based a clean sample consisted of"
+        print("The LSQ fit is performed based a clean sample consisted of "
               "all source with a normalized separation with X<={:.3f}.\n".format(x_limit))
 
         # Fitting with elimination
@@ -183,9 +183,9 @@ def vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=None,
 
     # 5.2 Convert to glide/rotation/quadrupolar terms
     # First 1/2 degrees -> rotation/glide/quadrupolar
-    pmt1, err1, cor_mat1 = convert_ts_to_rgq(
+    output_ext = convert_ts_to_rgq(
         pmt, sig, cor_mat, l_max, fit_type)
-    ouput = add_rgq_to_output(output, pmt1, err1, cor_mat1, l_max)
+    ouput = add_rgq_to_output(output, output_ext, l_max)
 
     # 5.3 Rescale the formal uncertaity via nonparametric bootstrap resampling
     if "bs_err" in kwargs.keys() and kwargs["bs_err"]:
@@ -262,7 +262,8 @@ def vsh_fit_4_table(data_tab, l_max=1, fit_type="full", pos_in_rad=False,
         dra_err = np.array(data_tab["pmra_error"])
     else:
         print("'dra_err', 'dra_error', 'pmra_err' or 'pmra_error' is not specificed.")
-        sys.exit(1)
+        print("So that I will use an equal weights.")
+        dra_err = np.ones(len(data_tab))
 
     if "ddec_err" in data_tab.colnames:
         ddec_err = np.array(data_tab["ddec_err"])
@@ -274,7 +275,8 @@ def vsh_fit_4_table(data_tab, l_max=1, fit_type="full", pos_in_rad=False,
         ddec_err = np.array(data_tab["pmdec_error"])
     else:
         print("'ddec_err', 'ddec_error', 'pmdec_err' or 'pmdec_error' is not specificed.")
-        sys.exit(1)
+        print("So that I will use an equal weights.")
+        ddec_err = np.ones(len(data_tab))
 
     if "dra_ddec_cov" in data_tab.colnames:
         dra_ddc_cov = np.array(data_tab["dra_ddec_cov"])
@@ -286,6 +288,9 @@ def vsh_fit_4_table(data_tab, l_max=1, fit_type="full", pos_in_rad=False,
     elif "pmra_pmdec_cor" in data_tab.colnames:
         dra_ddc_cor = np.array(data_tab["pmra_pmdec_cor"])
     else:
+        print("'dra_ddec_cov', 'dra_ddec_cor', 'pmra_pmdec_corr' or "
+              "'pmra_pmdec_cor' is not specificed.")
+        print("So that I will consider the covariance matrix as a diagonal one.")
         dra_ddc_cor = None
 
     # Do the LSQ fitting
@@ -383,10 +388,6 @@ def rotgliquad_fit(dra, ddc, dra_err, ddc_err, ra, dc, ra_dc_cor=None,
     cor_mat2 : matrix
         matrix of correlation coefficient.
     """
-
-    if l_max < 2:
-        print("The maximum degree l_max could not be smaller than 2.")
-        sys.exit(1)
 
     # VSH fit
     output = vsh_fit(dra, ddc, dra_err, ddc_err, ra, dc,
